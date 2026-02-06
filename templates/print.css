@@ -10,6 +10,17 @@
   line-height: 1.5;
 }
 
+/* Table of Contents Styling for Print */
+.table-of-contents ul {
+  list-style-type: none;
+  padding-left: 1rem;
+}
+
+.table-of-contents a {
+  color: #000000;
+  text-decoration: none;
+}
+
 /* Force colors to print correctly (code backgrounds, alerts) */
 * {
   -webkit-print-color-adjust: exact !important;
