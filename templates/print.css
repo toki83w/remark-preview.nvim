@@ -1,0 +1,47 @@
+@import url("https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.2.0/github-markdown-light.min.css");
+
+.markdown-body {
+  box-sizing: border-box;
+  margin: 0 auto;
+  padding: 0;
+  background-color: #ffffff;
+  color: #000000;
+  font-size: 11pt;
+  line-height: 1.5;
+}
+
+/* Force colors to print correctly (code backgrounds, alerts) */
+* {
+  -webkit-print-color-adjust: exact !important;
+  print-color-adjust: exact !important;
+}
+
+/* Page Break optimization */
+pre,
+blockquote,
+tr,
+img,
+.markdown-alert {
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+h1,
+h2,
+h3 {
+  page-break-after: avoid;
+}
+
+/* Links: Expand them so the URL is readable on paper */
+@media print {
+  a[href^="http"]:after {
+    content: " (" attr(href) ")";
+    font-size: 0.9em;
+    color: #555;
+  }
+}
+
+/* Ensure math formulas are appropriately colored for white paper */
+.katex {
+  color: #000 !important;
+}

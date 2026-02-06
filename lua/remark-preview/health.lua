@@ -35,6 +35,7 @@ function M.check()
         "rehype-katex",
         "rehype-document",
         "rehype-stringify",
+        "puppeteer",
     }
     for _, pkg in ipairs(pkgs) do
         check_npm_pkg(pkg)

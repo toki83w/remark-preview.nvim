@@ -45,9 +45,14 @@ The plugin includes a build hook to automatically manage the necessary NPM depen
     opts = {
         theme = "dark", -- options: "dark" (Catppuccin Mocha) or "light" (GitHub)
         port_base = 8080,
+        pdf = {
+            format = "A4",
+            margin = "1cm"
+        },
     },
     keys = {
         { "<leader>mp", "<cmd>RemarkPreviewToggle<cr>", desc = "Toggle Remark Preview" }
+        { "<leader>me", "<cmd>RemarkPreviewExport<cr>", desc = "Export markdown to PDF" }
     },
 }
 ```
@@ -57,6 +62,7 @@ The plugin includes a build hook to automatically manage the necessary NPM depen
 
 * `:RemarkPreviewToggle`: Starts or stops the live preview server.
 * `:RemarkPreviewInstall`: Manually triggers the installation of global NPM dependencies.
+* `:RemarkPreviewExport`: Export current file to PDF (requires Puppeteer).
 * `:checkhealth remark-preview`: Verifies that all binaries and node packages are correctly installed.
 
 
@@ -83,10 +89,18 @@ graph TD
 
 ## Configuration
 
-| Option      | Default  | Description                                  |
-|-------------|----------|----------------------------------------------|
-| `theme`     | `"dark"` | Sets the CSS theme injected into the preview |
-| `port_base` | `8080`   | Starting port for the local server           |
+You can pass these options into your setup() function:
+
+```lua
+require("remark-preview").setup({
+  theme = "dark",       -- Default UI theme: "dark" or "light"
+  port_base = 8080,     -- Starting port for the local server
+  pdf = {
+    format = "A4",      -- A4, Letter, Legal, etc.
+    margin = "1.5cm"    -- Margin size for exported PDFs
+  }
+})
+```
 
 
 ## License
