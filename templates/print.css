@@ -1,5 +1,6 @@
 @import url("https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.2.0/github-markdown-light.min.css");
 
+/* Global Print Settings */
 .markdown-body {
   box-sizing: border-box;
   margin: 0 auto;
@@ -7,98 +8,80 @@
   background-color: #ffffff;
   color: #000000;
   font-size: 11pt;
-  line-height: 1.5;
+  line-height: 1.6;
+  /* Local font assumption as requested */
+  font-family:
+    "Noto Sans",
+    -apple-system,
+    sans-serif !important;
 }
 
-/* Hide Sidebar elements in PDF */
+/* Ensure headings use Noto Sans */
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 {
+  font-family: "Noto Sans", sans-serif !important;
+  border-bottom: 1px solid #eaecef;
+  margin-top: 24px;
+  margin-bottom: 16px;
+  font-weight: 600;
+}
+
+/* --- Hide UI Elements in PDF --- */
 .toc-sidebar,
 .toc-toggle {
   display: none !important;
 }
 
-/* Table of Contents Styling for Print */
-.table-of-contents ul {
-  list-style-type: none;
-  padding-left: 1rem;
+/* --- Custom Task List Styling for Print --- */
+li.custom-task {
+  list-style: none !important;
+  margin-left: -20px;
+  margin-bottom: 8px;
 }
 
-.table-of-contents a {
-  color: #000000;
-  text-decoration: none;
+.task-icon {
+  margin-right: 10px;
+  font-style: normal;
+  display: inline-block;
+  width: 1.2em;
+  text-align: center;
 }
 
-/* Force colors to print correctly (code backgrounds, alerts) */
-* {
-  -webkit-print-color-adjust: exact !important;
-  print-color-adjust: exact !important;
-}
-
-/* Page Break optimization */
-pre,
-blockquote,
-tr,
-img,
-.markdown-alert {
-  page-break-inside: avoid;
-  break-inside: avoid;
-}
-
-h1,
-h2,
-h3 {
-  page-break-after: avoid;
-}
-
-/* Links: Expand them so the URL is readable on paper */
-@media print {
-  a[href^="http"]:after {
-    content: " (" attr(href) ")";
-    font-size: 0.9em;
-    color: #555;
-  }
-}
-
-/* Ensure math formulas are appropriately colored for white paper */
-.katex {
-  color: #000 !important;
-}
-
-/* Custom lists */
+/* Black and white optimizations for custom tasks */
 li.task-important {
+  font-weight: bold;
   border-left: 3px solid #000;
   padding-left: 10px;
-  font-weight: bold;
-  list-style: none;
 }
-li.task-important::before {
-  content: "!: ";
-  font-size: 0.8em;
-}
-
 li.task-question {
   font-style: italic;
-  list-style: none;
-}
-li.task-question::before {
-  content: "?: ";
-  font-weight: bold;
-}
-
-li.task-ongoing {
-  list-style: none;
   color: #444;
 }
-li.task-ongoing::before {
-  content: ">> ";
+li.task-ongoing {
+  color: #555;
 }
 
+/* --- GitHub Alerts for Print --- */
 .markdown-alert {
   border: 1px solid #d0d7de;
   border-left-width: 5px;
-  padding: 10px;
+  padding: 10px 15px;
   margin-bottom: 16px;
   background-color: #f6f8fa !important;
+  page-break-inside: avoid; /* Prevent alerts from splitting across pages */
 }
+
+.markdown-alert-title {
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
 .markdown-alert-note {
   border-left-color: #0969da;
 }
@@ -113,4 +96,58 @@ li.task-ongoing::before {
 }
 .markdown-alert-caution {
   border-left-color: #cf222e;
+}
+
+/* --- Document Logic & Page Control --- */
+@media print {
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  body {
+    font-family: "Noto Sans", sans-serif !important;
+  }
+
+  /* Prevent breaking inside elements */
+  pre,
+  blockquote,
+  tr,
+  img,
+  .markdown-alert {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Headings stay with following paragraph */
+  h1,
+  h2,
+  h3 {
+    page-break-after: avoid;
+  }
+
+  /* Link behavior: display full URL next to the link text */
+  a[href^="http"]:after {
+    content: " (" attr(href) ")";
+    font-size: 0.85em;
+    color: #555;
+    word-wrap: break-word;
+  }
+
+  /* Remove link decoration for local TOC links in PDF */
+  a[href^="#"] {
+    text-decoration: none;
+    color: #000;
+  }
+}
+
+/* Code block adjustments for paper */
+.markdown-body pre {
+  background-color: #f6f8fa !important;
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  padding: 16px;
+  overflow: hidden;
+  white-space: pre-wrap;
+  word-wrap: break-word;
 }

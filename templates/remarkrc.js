@@ -28,7 +28,8 @@ let cssContent = "";
 try {
   cssContent = readFileSync(join(templateDir, themeFile), "utf8");
 } catch (e) {
-  cssContent = "body { background: #1e1e2e; color: #cdd6f4; }";
+  cssContent =
+    'body { font-family: "Noto Sans", sans-serif; background: #1e1e2e; }';
 }
 
 export default {
@@ -65,10 +66,13 @@ export default {
           cssContent +
           `
             html { scroll-behavior: smooth; }
-            
             @media screen {
                 :root { --sidebar-width: 260px; }
-                body { transition: margin-left 0.3s; margin-left: 45px; }
+                body { 
+                    transition: margin-left 0.3s; 
+                    margin-left: 45px; 
+                    font-family: "Noto Sans", sans-serif !important; 
+                }
                 body.sidebar-open { margin-left: var(--sidebar-width); }
 
                 .toc-sidebar {
@@ -78,42 +82,32 @@ export default {
                     border-right: 1px solid ${theme === "dark" ? "#313244" : "#d0d7de"};
                     overflow-y: auto; z-index: 1000;
                     transition: left 0.3s; padding: 20px 15px;
-                    font-family: ui-sans-serif, -apple-system, system-ui, sans-serif;
+                    font-family: "Noto Sans", sans-serif !important;
                 }
                 .toc-sidebar.open { left: 0; }
                 .toc-sidebar h3 { font-size: 1.1em; color: #cba6f7; margin-bottom: 15px; font-weight: 700; }
-                
-                .toc-sidebar ul { list-style: none; padding: 0; margin: 0; }
-                .toc-sidebar li { margin: 4px 0; }
                 .toc-sidebar a { 
                     display: block; padding: 6px 10px; text-decoration: none; 
                     color: #a6adc8; font-size: 0.85em; border-radius: 6px;
-                    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
                 }
                 .toc-sidebar a.active { background: #89b4fa22; color: #89b4fa; font-weight: 700; }
-                .toc-sidebar a:hover { background: #313244; color: #f5e0dc; }
-                .toc-sidebar .depth-3 { padding-left: 15px; }
-                .toc-sidebar .depth-4 { padding-left: 25px; }
-
+                
                 .toc-toggle {
                     position: fixed; left: 10px; top: 10px; z-index: 1001;
-                    cursor: pointer; background: #cba6f7; color: #11111b;
+                    font-family: "Noto Sans", sans-serif !important;
+                    background: #cba6f7; color: #11111b;
                     width: 32px; height: 32px; display: flex;
                     align-items: center; justify-content: center; border-radius: 8px;
-                    font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
                 }
 
-                /* Custom Task Style helpers */
                 li.custom-task { list-style: none !important; }
                 li.custom-task input { display: none !important; }
-                .task-icon { margin-right: 10px; font-style: normal; display: inline-block; width: 1.2em; text-align: center; }
+                .task-icon { margin-right: 10px; font-style: normal; }
             }
-
-            @media print { .toc-sidebar, .toc-toggle { display: none !important; } }
         `,
         script: `
           window.addEventListener('DOMContentLoaded', () => {
-              // 1. Build Sidebar
+              // 1. Sidebar Injection
               const sidebar = document.createElement('div');
               sidebar.className = 'toc-sidebar open';
               sidebar.innerHTML = '<h3>Contents</h3><ul id="sb-list"></ul>';
@@ -122,7 +116,6 @@ export default {
 
               const sbList = document.getElementById('sb-list');
               const headings = document.querySelectorAll('h1, h2, h3, h4');
-              
               headings.forEach(h => {
                   if (!h.id) return;
                   const li = document.createElement('li');
@@ -134,7 +127,7 @@ export default {
                   sbList.appendChild(li);
               });
 
-              // 2. Toggle Switch
+              // 2. Toggle Button
               const btn = document.createElement('div');
               btn.className = 'toc-toggle';
               btn.innerHTML = '☰';
@@ -144,7 +137,7 @@ export default {
               };
               document.body.appendChild(btn);
 
-              // 3. Scroll Spy (Active Heading Highlight)
+              // 3. Scroll Spy
               const observer = new IntersectionObserver((entries) => {
                   entries.forEach(entry => {
                       if (entry.isIntersecting) {
@@ -156,7 +149,7 @@ export default {
               }, { rootMargin: '0px 0px -80% 0px' });
               headings.forEach(h => observer.observe(h));
 
-              // 4. Custom Task List Processing [!], [?], [>]
+              // 4. Custom Task Markers
               document.querySelectorAll('li').forEach(li => {
                   const content = li.innerHTML.trim();
                   if (content.includes('[!]')) {
@@ -172,7 +165,7 @@ export default {
               });
           });
 
-          // 5. Neovim Scroll Sync
+          // 5. Scroll Sync
           const pid = window.location.pathname.split('_').pop().split('.')[0];
           setInterval(() => {
             fetch('scroll_' + pid + '.json').then(r => r.json()).then(d => {
