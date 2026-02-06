@@ -24,12 +24,13 @@ function M.check()
     end
 
     local pkgs = {
+        "live-server",
         "remark-cli",
         "remark-parse",
         "remark-gfm",
         "remark-github-alerts",
         "remark-math",
-        "remark-asciimath",
+        "@widcardw/rehype-asciimath",
         "remark-kroki",
         "remark-flexible-toc",
         "remark-rehype",
