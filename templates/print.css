@@ -62,3 +62,32 @@ h3 {
 .katex {
   color: #000 !important;
 }
+
+/* Custom lists */
+li.task-important {
+  border-left: 3px solid #000;
+  padding-left: 10px;
+  font-weight: bold;
+  list-style: none;
+}
+li.task-important::before {
+  content: "!: ";
+  font-size: 0.8em;
+}
+
+li.task-question {
+  font-style: italic;
+  list-style: none;
+}
+li.task-question::before {
+  content: "?: ";
+  font-weight: bold;
+}
+
+li.task-ongoing {
+  list-style: none;
+  color: #444;
+}
+li.task-ongoing::before {
+  content: ">> ";
+}

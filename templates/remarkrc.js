@@ -15,11 +15,14 @@ import rehypeStringify from "rehype-stringify";
 
 const templateDir = process.env.PLUGIN_PATH;
 const docDir = process.env.DOC_DIR;
+const theme = process.env.PREVIEW_THEME || "dark";
 
-// Theme Selection logic
-let themeFile = "dark.css";
-if (process.env.PREVIEW_THEME === "light") themeFile = "light.css";
-if (process.env.PREVIEW_THEME === "print") themeFile = "print.css";
+let themeFile =
+  theme === "light"
+    ? "light.css"
+    : theme === "print"
+      ? "print.css"
+      : "dark.css";
 
 let cssContent = "";
 try {
@@ -36,7 +39,6 @@ export default {
     remarkMath,
     remarkAsciimath,
     [remarkKroki, { server: "https://kroki.io", output: "inline-svg" }],
-    // Keeps [toc] for the document, but we'll also use it to build the sidebar
     [
       remarkFlexibleToc,
       {
@@ -64,61 +66,61 @@ export default {
           `
             html { scroll-behavior: smooth; }
             
+            /* Sidebar & Custom Task Styles - Media Screen Only */
             @media screen {
                 :root { --sidebar-width: 260px; }
-                body { transition: margin-left 0.3s; margin-left: 40px; }
+                body { transition: margin-left 0.3s; margin-left: 45px; }
                 body.sidebar-open { margin-left: var(--sidebar-width); }
 
                 .toc-sidebar {
                     position: fixed; left: calc(-1 * var(--sidebar-width)); top: 0;
                     width: var(--sidebar-width); height: 100vh;
-                    background: ${process.env.PREVIEW_THEME === "dark" ? "#181825" : "#ffffff"};
-                    border-right: 1px solid ${process.env.PREVIEW_THEME === "dark" ? "#45475a" : "#d0d7de"};
+                    background: ${theme === "dark" ? "#181825" : "#ffffff"};
+                    border-right: 1px solid ${theme === "dark" ? "#45475a" : "#d0d7de"};
                     overflow-y: auto; z-index: 1000;
                     transition: left 0.3s; padding: 20px 15px;
-                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+                    font-family: -apple-system, sans-serif;
                 }
                 .toc-sidebar.open { left: 0; }
-                .toc-sidebar h3 { font-size: 1.2em; margin-bottom: 15px; color: #89b4fa; }
-                .toc-sidebar ul { list-style: none; padding-left: 0; margin: 0; }
-                .toc-sidebar li { margin: 8px 0; }
+                .toc-sidebar h3 { font-size: 1.1em; color: #89b4fa; margin-bottom: 15px; }
+                .toc-sidebar ul { list-style: none; padding: 0; }
                 .toc-sidebar a { 
-                    text-decoration: none; color: inherit; font-size: 0.9em; 
-                    display: block; padding: 4px 8px; border-radius: 4px;
-                    transition: background 0.2s;
+                    display: block; padding: 5px 10px; text-decoration: none; 
+                    color: inherit; font-size: 0.9em; border-radius: 4px;
                 }
                 .toc-sidebar a.active { background: #58a6ff33; color: #58a6ff; font-weight: bold; }
-                .toc-sidebar a:hover { background: #89b4fa22; }
-                
-                /* Indentation for nested headers */
-                .toc-sidebar .depth-3 { padding-left: 20px; font-size: 0.85em; }
-                .toc-sidebar .depth-4 { padding-left: 35px; font-size: 0.8em; }
+                .toc-sidebar .depth-3 { padding-left: 20px; }
+                .toc-sidebar .depth-4 { padding-left: 35px; }
 
                 .toc-toggle {
-                    position: fixed; left: 10px; top: 10px;
-                    z-index: 1001; cursor: pointer;
-                    background: #58a6ff; color: white;
+                    position: fixed; left: 10px; top: 10px; z-index: 1001;
+                    cursor: pointer; background: #58a6ff; color: white;
                     width: 32px; height: 32px; display: flex;
-                    align-items: center; justify-content: center;
-                    border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+                    align-items: center; justify-content: center; border-radius: 6px;
                 }
+
+                /* Custom Task List Visuals */
+                .task-important { color: #f38ba8 !important; font-weight: bold; }
+                .task-question { color: #f9e2af !important; font-style: italic; }
+                .task-ongoing { color: #89b4fa !important; }
+                li.custom-task { list-style: none !important; }
+                li.custom-task input { display: none; }
             }
 
             @media print { .toc-sidebar, .toc-toggle { display: none !important; } }
         `,
         script: `
           window.addEventListener('DOMContentLoaded', () => {
-              // 1. Build sidebar structure
+              // 1. Sidebar Initialization
               const sidebar = document.createElement('div');
-              sidebar.className = 'toc-sidebar open'; // Default open
-              sidebar.innerHTML = '<h3>Table of Contents</h3><ul id="sidebar-list"></ul>';
+              sidebar.className = 'toc-sidebar open';
+              sidebar.innerHTML = '<h3>Contents</h3><ul id="sb-list"></ul>';
               document.body.appendChild(sidebar);
               document.body.classList.add('sidebar-open');
 
-              const list = document.getElementById('sidebar-list');
-              
-              // 2. Scan document for headings
+              const sbList = document.getElementById('sb-list');
               const headings = document.querySelectorAll('h1, h2, h3, h4');
+              
               headings.forEach(h => {
                   if (!h.id) return;
                   const li = document.createElement('li');
@@ -127,10 +129,9 @@ export default {
                   a.innerText = h.innerText;
                   a.className = 'depth-' + h.tagName.substring(1);
                   li.appendChild(a);
-                  list.appendChild(li);
+                  sbList.appendChild(li);
               });
 
-              // 3. Toggle button
               const btn = document.createElement('div');
               btn.className = 'toc-toggle';
               btn.innerHTML = '☰';
@@ -140,25 +141,42 @@ export default {
               };
               document.body.appendChild(btn);
 
-              // 4. Highlight Active Section (Intersection Observer)
+              // 2. Intersection Observer (Scroll Spy)
               const observer = new IntersectionObserver((entries) => {
                   entries.forEach(entry => {
                       if (entry.isIntersecting) {
                           document.querySelectorAll('.toc-sidebar a').forEach(a => a.classList.remove('active'));
-                          const activeLink = document.querySelector('.toc-sidebar a[href="#' + entry.target.id + '"]');
-                          if (activeLink) activeLink.classList.add('active');
+                          const link = document.querySelector('.toc-sidebar a[href="#' + entry.target.id + '"]');
+                          if (link) link.classList.add('active');
                       }
                   });
               }, { rootMargin: '0px 0px -80% 0px' });
-
               headings.forEach(h => observer.observe(h));
+
+              // 3. Custom Task List Processing
+              document.querySelectorAll('li').forEach(li => {
+                  const text = li.innerText.trim();
+                  let icon = "";
+                  if (text.startsWith('[!]')) {
+                      li.classList.add('task-important', 'custom-task');
+                      icon = "❗ ";
+                      li.innerHTML = li.innerHTML.replace('[!]', icon);
+                  } else if (text.startsWith('[?]')) {
+                      li.classList.add('task-question', 'custom-task');
+                      icon = "❓ ";
+                      li.innerHTML = li.innerHTML.replace('[?]', icon);
+                  } else if (text.startsWith('[>]')) {
+                      li.classList.add('task-ongoing', 'custom-task');
+                      icon = "⏳ ";
+                      li.innerHTML = li.innerHTML.replace('[>]', icon);
+                  }
+              });
           });
 
-          // Scroll Sync Logic
+          // 4. Neovim Scroll Sync
           const pid = window.location.pathname.split('_').pop().split('.')[0];
-          const scrollFile = 'scroll_' + pid + '.json';
           setInterval(() => {
-            fetch(scrollFile).then(r => r.json()).then(d => {
+            fetch('scroll_' + pid + '.json').then(r => r.json()).then(d => {
               const h = document.documentElement.scrollHeight - window.innerHeight;
               window.scrollTo({ top: d.percent * h, behavior: 'smooth' });
             }).catch(() => {});
