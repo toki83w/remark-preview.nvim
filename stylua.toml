@@ -1,0 +1,7 @@
+column_width = 120
+indent_type = "Spaces"
+quote_style = "AutoPreferDouble"
+indent_width = 4
+collapse_simple_statement = "Never"
+call_parentheses = "Always"
+space_after_function_names = "Never"
