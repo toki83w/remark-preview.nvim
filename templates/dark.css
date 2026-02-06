@@ -1,5 +1,4 @@
 @import url("https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.2.0/github-markdown.min.css");
-
 .markdown-body {
   box-sizing: border-box;
   min-width: 200px;
@@ -14,13 +13,6 @@
   border-bottom-color: #313244;
   color: #89b4fa;
 }
-.markdown-body h3,
-.markdown-body h4 {
-  color: #f9e2af;
-}
-.markdown-body a {
-  color: #89dceb;
-}
 .markdown-body code {
   background-color: #313244;
   color: #fab387;
@@ -29,7 +21,18 @@
   background-color: #11111b;
   border: 1px solid #45475a;
 }
-.markdown-body blockquote {
-  border-left: 0.25em solid #b4befe;
-  background-color: #313244;
+.markdown-alert {
+  padding: 0.5rem 1rem;
+  margin-bottom: 1rem;
+  border-left: 0.25em solid;
+  border-radius: 0 4px 4px 0;
+}
+.markdown-alert-note {
+  border-left-color: #89b4fa;
+}
+.markdown-alert-important {
+  border-left-color: #cba6f7;
+}
+.markdown-alert-warning {
+  border-left-color: #f9e2af;
 }

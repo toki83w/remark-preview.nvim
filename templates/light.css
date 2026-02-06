@@ -1,4 +1,4 @@
-@import url("https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.2.0/github-markdown.min.css");
+@import url("https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.2.0/github-markdown-light.min.css");
 
 .markdown-body {
   box-sizing: border-box;
@@ -6,4 +6,58 @@
   max-width: 980px;
   margin: 0 auto;
   padding: 45px;
+  background-color: #ffffff;
+  color: #1f2328;
+}
+
+/* Ensure code blocks have a subtle background */
+.markdown-body pre {
+  background-color: #f6f8fa;
+  border: 1px solid #d0d7de;
+}
+
+.markdown-body code {
+  background-color: rgba(175, 184, 193, 0.2);
+  color: #1f2328;
+}
+
+/* GitHub Alert styling for Light Theme */
+.markdown-alert {
+  padding: 0.5rem 1rem;
+  margin-bottom: 1rem;
+  border-left: 0.25em solid;
+  border-radius: 0 4px 4px 0;
+}
+
+.markdown-alert-note {
+  border-left-color: #0969da;
+  background-color: #f6f8fa;
+}
+.markdown-alert-important {
+  border-left-color: #8250df;
+  background-color: #fbefff;
+}
+.markdown-alert-warning {
+  border-left-color: #9a6700;
+  background-color: #fff8c5;
+}
+.markdown-alert-tip {
+  border-left-color: #1a7f37;
+  background-color: #f0fff4;
+}
+.markdown-alert-caution {
+  border-left-color: #cf222e;
+  background-color: #fff5f5;
+}
+
+.markdown-alert-title {
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+/* Adjust KaTeX color for light background */
+.katex {
+  color: #1f2328;
 }

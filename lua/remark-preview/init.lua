@@ -9,6 +9,8 @@ M.config = {
     port_base = 8080,
 }
 
+local REQUIRED_BINS = { "node", "npm", "remark", "live-server" }
+
 local function get_plugin_path(file)
     local plugin_root = vim.fn.fnamemodify(debug.getinfo(1).source:sub(2), ":h:h:h")
     return vim.fs.joinpath(plugin_root, "templates", file)
@@ -22,6 +24,59 @@ local function get_paths()
         vim.fs.joinpath(temp_dir, unique_name .. ".html"),
         unique_name .. ".html",
         vim.fs.joinpath(temp_dir, "scroll_" .. pid .. ".json")
+end
+
+local function check_dependencies()
+    local missing = {}
+    for _, bin in ipairs(REQUIRED_BINS) do
+        if vim.fn.executable(bin) ~= 1 then
+            table.insert(missing, bin)
+        end
+    end
+    return missing
+end
+
+function M.install_deps()
+    local pkgs = {
+        "remark-cli",
+        "remark-parse",
+        "remark-gfm",
+        "remark-github-alerts",
+        "remark-math",
+        "remark-asciimath",
+        "remark-kroki",
+        "remark-rehype",
+        "rehype-katex",
+        "rehype-document",
+        "rehype-stringify",
+        "live-server",
+    }
+    local cmd = "npm install -g " .. table.concat(pkgs, " ")
+    vim.notify("remark-preview: Installing dependencies...", vim.log.levels.INFO)
+    vim.cmd("split | term " .. cmd)
+end
+
+function M.build()
+    local pkgs = {
+        "remark-cli",
+        "remark-parse",
+        "remark-gfm",
+        "remark-github-alerts",
+        "remark-math",
+        "remark-asciimath",
+        "remark-kroki",
+        "remark-rehype",
+        "rehype-katex",
+        "rehype-document",
+        "rehype-stringify",
+        "live-server",
+    }
+    local cmd = "npm install -g " .. table.concat(pkgs, " ")
+    print("Building remark-preview...")
+    local result = os.execute(cmd)
+    if result ~= 0 then
+        error("Build failed. Check npm permissions.")
+    end
 end
 
 local function run_remark(input, output)
@@ -38,11 +93,6 @@ local function run_remark(input, output)
             PREVIEW_THEME = M.config.theme,
             PLUGIN_PATH = vim.fn.fnamemodify(get_plugin_path(""), ":h"),
         },
-        on_exit = function(_, code)
-            if code ~= 0 then
-                vim.notify("Remark failed. Run :checkhealth remark-preview", vim.log.levels.ERROR)
-            end
-        end,
     })
 end
 
@@ -60,21 +110,29 @@ function M.toggle()
         run_remark(vim.fn.expand("%:p"), output_path)
         local opener = is_windows and 'start "" ' or "xdg-open "
         vim.fn.jobstart(opener .. string.format("http://127.0.0.1:%d/%s", port, html_filename), { shell = is_windows })
-        vim.notify("Markdown Preview: ON", vim.log.levels.INFO)
     else
         if server_job_id then
             vim.fn.jobstop(server_job_id)
         end
         server_job_id = nil
-        os.remove(output_path)
         vim.g.markdown_preview_active = false
-        vim.notify("Markdown Preview: OFF", vim.log.levels.WARN)
     end
 end
 
 function M.setup(opts)
     M.config = vim.tbl_deep_extend("force", M.config, opts or {})
     vim.api.nvim_create_user_command("RemarkPreviewToggle", M.toggle, {})
+    vim.api.nvim_create_user_command("RemarkPreviewInstall", M.install_deps, {})
+
+    local missing = check_dependencies()
+    if #missing > 0 then
+        vim.schedule(function()
+            vim.notify(
+                "remark-preview: Missing " .. table.concat(missing, ", ") .. ". Run :RemarkPreviewInstall",
+                vim.log.levels.WARN
+            )
+        end)
+    end
 
     local group = vim.api.nvim_create_augroup("RemarkPreview", { clear = true })
     vim.api.nvim_create_autocmd("BufWritePost", {
@@ -87,7 +145,6 @@ function M.setup(opts)
             end
         end,
     })
-
     vim.api.nvim_create_autocmd({ "CursorMoved", "CursorMovedI" }, {
         group = group,
         pattern = "*.md",
