@@ -12,6 +12,7 @@ import rehypeDocument from "rehype-document";
 import rehypeStringify from "rehype-stringify";
 
 const templateDir = process.env.PLUGIN_PATH;
+const docDir = process.env.DOC_DIR; // Received from Lua
 const theme = process.env.PREVIEW_THEME === "light" ? "light.css" : "dark.css";
 let cssContent = "";
 
@@ -34,6 +35,14 @@ export default {
     [
       rehypeDocument,
       {
+        // Injects <base href="file:///your/path/"> so local images work
+        head: [
+          {
+            type: "element",
+            tagName: "base",
+            properties: { href: "file://" + docDir + "/" },
+          },
+        ],
         css: ["https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css"],
         style: cssContent,
         script: `

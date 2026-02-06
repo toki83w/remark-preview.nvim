@@ -81,6 +81,8 @@ end
 
 local function run_remark(input, output)
     local remark_config = get_plugin_path("remarkrc.js")
+    local doc_dir = vim.fn.expand("%:p:h") -- Capture the directory of the current file
+
     local cmd = string.format(
         "remark %s --rc-path %s --output %s",
         vim.fn.shellescape(input),
@@ -92,6 +94,7 @@ local function run_remark(input, output)
         env = {
             PREVIEW_THEME = M.config.theme,
             PLUGIN_PATH = vim.fn.fnamemodify(get_plugin_path(""), ":h"),
+            DOC_DIR = doc_dir, -- Pass it to the environment
         },
     })
 end
