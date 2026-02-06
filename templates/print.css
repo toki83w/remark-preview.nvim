@@ -10,6 +10,12 @@
   line-height: 1.5;
 }
 
+/* Hide Sidebar elements in PDF */
+.toc-sidebar,
+.toc-toggle {
+  display: none !important;
+}
+
 /* Table of Contents Styling for Print */
 .table-of-contents ul {
   list-style-type: none;
