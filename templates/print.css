@@ -91,3 +91,26 @@ li.task-ongoing {
 li.task-ongoing::before {
   content: ">> ";
 }
+
+.markdown-alert {
+  border: 1px solid #d0d7de;
+  border-left-width: 5px;
+  padding: 10px;
+  margin-bottom: 16px;
+  background-color: #f6f8fa !important;
+}
+.markdown-alert-note {
+  border-left-color: #0969da;
+}
+.markdown-alert-tip {
+  border-left-color: #1a7f37;
+}
+.markdown-alert-warning {
+  border-left-color: #9a6700;
+}
+.markdown-alert-important {
+  border-left-color: #8250df;
+}
+.markdown-alert-caution {
+  border-left-color: #cf222e;
+}

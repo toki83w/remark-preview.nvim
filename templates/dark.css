@@ -1,38 +1,101 @@
-@import url("https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.2.0/github-markdown.min.css");
+@import url("https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.2.0/github-markdown-dark.min.css");
+
 .markdown-body {
   box-sizing: border-box;
   min-width: 200px;
   max-width: 980px;
   margin: 0 auto;
   padding: 45px;
-  background-color: #1e1e2e;
-  color: #cdd6f4;
+  background-color: #1e1e2e; /* Mocha Base */
+  color: #cdd6f4; /* Mocha Text */
 }
-.markdown-body h1,
-.markdown-body h2 {
-  border-bottom-color: #313244;
-  color: #89b4fa;
-}
-.markdown-body code {
-  background-color: #313244;
-  color: #fab387;
-}
-.markdown-body pre {
-  background-color: #11111b;
-  border: 1px solid #45475a;
-}
+
+/* --- GitHub Alerts (Mocha Themed) --- */
+
 .markdown-alert {
   padding: 0.5rem 1rem;
-  margin-bottom: 1rem;
+  margin-bottom: 16px;
+  color: inherit;
   border-left: 0.25em solid;
-  border-radius: 0 4px 4px 0;
+  border-radius: 0 6px 6px 0;
 }
-.markdown-alert-note {
+
+.markdown-alert .markdown-alert-title {
+  display: flex;
+  font-weight: 600;
+  align-items: center;
+  line-height: 1;
+}
+
+.markdown-alert .markdown-alert-title svg {
+  margin-right: 8px;
+}
+
+/* Note - Blue */
+.markdown-alert.markdown-alert-note {
   border-left-color: #89b4fa;
+  background-color: #1e1e2e;
 }
-.markdown-alert-important {
+.markdown-alert.markdown-alert-note .markdown-alert-title {
+  color: #89b4fa;
+}
+
+/* Tip - Green */
+.markdown-alert.markdown-alert-tip {
+  border-left-color: #a6e3a1;
+  background-color: #1e1e2e;
+}
+.markdown-alert.markdown-alert-tip .markdown-alert-title {
+  color: #a6e3a1;
+}
+
+/* Important - Purple */
+.markdown-alert.markdown-alert-important {
   border-left-color: #cba6f7;
+  background-color: #1e1e2e;
 }
-.markdown-alert-warning {
+.markdown-alert.markdown-alert-important .markdown-alert-title {
+  color: #cba6f7;
+}
+
+/* Warning - Yellow */
+.markdown-alert.markdown-alert-warning {
   border-left-color: #f9e2af;
+  background-color: #1e1e2e;
+}
+.markdown-alert.markdown-alert-warning .markdown-alert-title {
+  color: #f9e2af;
+}
+
+/* Caution - Red */
+.markdown-alert.markdown-alert-caution {
+  border-left-color: #f38ba8;
+  background-color: #1e1e2e;
+}
+.markdown-alert.markdown-alert-caution .markdown-alert-title {
+  color: #f38ba8;
+}
+
+/* --- Custom Task List Colors --- */
+.task-important {
+  color: #f38ba8 !important;
+}
+.task-question {
+  color: #f9e2af !important;
+}
+.task-ongoing {
+  color: #89b4fa !important;
+}
+
+/* --- Code Styling --- */
+.markdown-body pre {
+  background-color: #11111b !important; /* Mocha Crust */
+  border: 1px solid #45475a;
+}
+
+.markdown-body code {
+  background-color: #313244; /* Mocha Surface0 */
+  color: #f5e0dc;
+  padding: 0.2em 0.4em;
+  border-radius: 6px;
 }

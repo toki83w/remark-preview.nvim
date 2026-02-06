@@ -28,7 +28,7 @@ let cssContent = "";
 try {
   cssContent = readFileSync(join(templateDir, themeFile), "utf8");
 } catch (e) {
-  cssContent = "body { background: white; color: black; }";
+  cssContent = "body { background: #1e1e2e; color: #cdd6f4; }";
 }
 
 export default {
@@ -66,7 +66,6 @@ export default {
           `
             html { scroll-behavior: smooth; }
             
-            /* Sidebar & Custom Task Styles - Media Screen Only */
             @media screen {
                 :root { --sidebar-width: 260px; }
                 body { transition: margin-left 0.3s; margin-left: 45px; }
@@ -76,42 +75,45 @@ export default {
                     position: fixed; left: calc(-1 * var(--sidebar-width)); top: 0;
                     width: var(--sidebar-width); height: 100vh;
                     background: ${theme === "dark" ? "#181825" : "#ffffff"};
-                    border-right: 1px solid ${theme === "dark" ? "#45475a" : "#d0d7de"};
+                    border-right: 1px solid ${theme === "dark" ? "#313244" : "#d0d7de"};
                     overflow-y: auto; z-index: 1000;
                     transition: left 0.3s; padding: 20px 15px;
-                    font-family: -apple-system, sans-serif;
+                    font-family: ui-sans-serif, -apple-system, system-ui, sans-serif;
                 }
                 .toc-sidebar.open { left: 0; }
-                .toc-sidebar h3 { font-size: 1.1em; color: #89b4fa; margin-bottom: 15px; }
-                .toc-sidebar ul { list-style: none; padding: 0; }
+                .toc-sidebar h3 { font-size: 1.1em; color: #cba6f7; margin-bottom: 15px; font-weight: 700; }
+                
+                .toc-sidebar ul { list-style: none; padding: 0; margin: 0; }
+                .toc-sidebar li { margin: 4px 0; }
                 .toc-sidebar a { 
-                    display: block; padding: 5px 10px; text-decoration: none; 
-                    color: inherit; font-size: 0.9em; border-radius: 4px;
+                    display: block; padding: 6px 10px; text-decoration: none; 
+                    color: #a6adc8; font-size: 0.85em; border-radius: 6px;
+                    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
                 }
-                .toc-sidebar a.active { background: #58a6ff33; color: #58a6ff; font-weight: bold; }
-                .toc-sidebar .depth-3 { padding-left: 20px; }
-                .toc-sidebar .depth-4 { padding-left: 35px; }
+                .toc-sidebar a.active { background: #89b4fa22; color: #89b4fa; font-weight: 700; }
+                .toc-sidebar a:hover { background: #313244; color: #f5e0dc; }
+                .toc-sidebar .depth-3 { padding-left: 15px; }
+                .toc-sidebar .depth-4 { padding-left: 25px; }
 
                 .toc-toggle {
                     position: fixed; left: 10px; top: 10px; z-index: 1001;
-                    cursor: pointer; background: #58a6ff; color: white;
+                    cursor: pointer; background: #cba6f7; color: #11111b;
                     width: 32px; height: 32px; display: flex;
-                    align-items: center; justify-content: center; border-radius: 6px;
+                    align-items: center; justify-content: center; border-radius: 8px;
+                    font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
                 }
 
-                /* Custom Task List Visuals */
-                .task-important { color: #f38ba8 !important; font-weight: bold; }
-                .task-question { color: #f9e2af !important; font-style: italic; }
-                .task-ongoing { color: #89b4fa !important; }
+                /* Custom Task Style helpers */
                 li.custom-task { list-style: none !important; }
-                li.custom-task input { display: none; }
+                li.custom-task input { display: none !important; }
+                .task-icon { margin-right: 10px; font-style: normal; display: inline-block; width: 1.2em; text-align: center; }
             }
 
             @media print { .toc-sidebar, .toc-toggle { display: none !important; } }
         `,
         script: `
           window.addEventListener('DOMContentLoaded', () => {
-              // 1. Sidebar Initialization
+              // 1. Build Sidebar
               const sidebar = document.createElement('div');
               sidebar.className = 'toc-sidebar open';
               sidebar.innerHTML = '<h3>Contents</h3><ul id="sb-list"></ul>';
@@ -132,6 +134,7 @@ export default {
                   sbList.appendChild(li);
               });
 
+              // 2. Toggle Switch
               const btn = document.createElement('div');
               btn.className = 'toc-toggle';
               btn.innerHTML = '☰';
@@ -141,7 +144,7 @@ export default {
               };
               document.body.appendChild(btn);
 
-              // 2. Intersection Observer (Scroll Spy)
+              // 3. Scroll Spy (Active Heading Highlight)
               const observer = new IntersectionObserver((entries) => {
                   entries.forEach(entry => {
                       if (entry.isIntersecting) {
@@ -153,27 +156,23 @@ export default {
               }, { rootMargin: '0px 0px -80% 0px' });
               headings.forEach(h => observer.observe(h));
 
-              // 3. Custom Task List Processing
+              // 4. Custom Task List Processing [!], [?], [>]
               document.querySelectorAll('li').forEach(li => {
-                  const text = li.innerText.trim();
-                  let icon = "";
-                  if (text.startsWith('[!]')) {
+                  const content = li.innerHTML.trim();
+                  if (content.includes('[!]')) {
                       li.classList.add('task-important', 'custom-task');
-                      icon = "❗ ";
-                      li.innerHTML = li.innerHTML.replace('[!]', icon);
-                  } else if (text.startsWith('[?]')) {
+                      li.innerHTML = li.innerHTML.replace('[!]', '<i class="task-icon">❗</i>');
+                  } else if (content.includes('[?]')) {
                       li.classList.add('task-question', 'custom-task');
-                      icon = "❓ ";
-                      li.innerHTML = li.innerHTML.replace('[?]', icon);
-                  } else if (text.startsWith('[>]')) {
+                      li.innerHTML = li.innerHTML.replace('[?]', '<i class="task-icon">❓</i>');
+                  } else if (content.includes('[>]')) {
                       li.classList.add('task-ongoing', 'custom-task');
-                      icon = "⏳ ";
-                      li.innerHTML = li.innerHTML.replace('[>]', icon);
+                      li.innerHTML = li.innerHTML.replace('[>]', '<i class="task-icon">⏳</i>');
                   }
               });
           });
 
-          // 4. Neovim Scroll Sync
+          // 5. Neovim Scroll Sync
           const pid = window.location.pathname.split('_').pop().split('.')[0];
           setInterval(() => {
             fetch('scroll_' + pid + '.json').then(r => r.json()).then(d => {
