@@ -14,10 +14,19 @@ import { join } from "node:path";
 import { readFileSync } from "node:fs";
 import { remarkKroki } from "remark-kroki";
 import { remarkMark } from "remark-mark-highlight";
+import { visit } from "unist-util-visit";
 
 const engineDir = process.env.ENGINE_PATH;
 const docDir = process.env.DOC_DIR;
 const theme = process.env.PREVIEW_THEME || "dark";
+const kroki_aliases = [
+  "bytefield",
+  "graphviz",
+  "mermaid",
+  "plantuml",
+  "svgbob",
+  "wavedrom",
+];
 
 let themeFile =
   theme === "light"
@@ -34,6 +43,32 @@ try {
     'body { font-family: "Noto Sans", sans-serif; background: #ff0000; }';
 }
 
+// adds a white background to the img with alt property equal to a diagram name,
+// to improve the visibility of transparent diagrams (mermaid) in the dark theme
+function rehypeImgBg() {
+  return (tree) => {
+    visit(tree, "element", (node, index, parent) => {
+      if (
+        node.tagName === "img" &&
+        parent &&
+        Array.isArray(parent.children) &&
+        node.properties &&
+        kroki_aliases.includes(node.properties.alt)
+      ) {
+        parent.children.splice(index, 1, {
+          type: "element",
+          tagName: "div",
+          properties: {
+            style:
+              "background:#fff;padding:8px;display:inline-block;border-radius:6px;",
+          },
+          children: [node],
+        });
+      }
+    });
+  };
+}
+
 export default {
   plugins: [
     remarkParse,
@@ -44,8 +79,8 @@ export default {
       remarkKroki,
       {
         server: "https://kroki.io",
-        output: "img-html-base64",
-        alias: ["mermaid", "plantuml", "svgbob", "wavedrom", "bytefield"],
+        output: "img-base64",
+        alias: kroki_aliases,
       },
     ],
     remarkMark,
@@ -58,6 +93,7 @@ export default {
       },
     ],
     [remarkRehype, { allowDangerousHtml: true }],
+    rehypeImgBg,
     rehypeSlug,
     rehypeAsciimath,
     rehypeKatex,
