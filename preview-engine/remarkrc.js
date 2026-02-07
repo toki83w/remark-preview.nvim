@@ -13,7 +13,7 @@ import rehypeKatex from "rehype-katex";
 import rehypeDocument from "rehype-document";
 import rehypeStringify from "rehype-stringify";
 
-const templateDir = process.env.PLUGIN_PATH;
+const engineDir = process.env.PLUGIN_PATH;
 const docDir = process.env.DOC_DIR;
 const theme = process.env.PREVIEW_THEME || "dark";
 
@@ -26,7 +26,7 @@ let themeFile =
 
 let cssContent = "";
 try {
-  cssContent = readFileSync(join(templateDir, themeFile), "utf8");
+  cssContent = readFileSync(join(engineDir, themeFile), "utf8");
 } catch (e) {
   cssContent =
     'body { font-family: "Noto Sans", sans-serif; background: #1e1e2e; }';

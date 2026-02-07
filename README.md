@@ -39,9 +39,7 @@ The plugin includes a build hook to automatically manage the necessary NPM depen
     "toki83w/remark-preview.nvim",
     ft = "markdown",
     -- Automatically install/update npm dependencies on install or update
-    build = function()
-        require("remark-preview").build()
-    end,
+    build = "cd preview-engine && npm install",
     opts = {
         theme = "dark", -- options: "dark" (Catppuccin Mocha) or "light" (GitHub)
         port_base = 8080,
@@ -51,8 +49,8 @@ The plugin includes a build hook to automatically manage the necessary NPM depen
         },
     },
     keys = {
-        { "<leader>mp", "<cmd>RemarkPreviewToggle<cr>", desc = "Toggle Remark Preview" }
-        { "<leader>me", "<cmd>RemarkPreviewExport<cr>", desc = "Export markdown to PDF" }
+        { "<leader>mp", "<cmd>RemarkPreviewToggle<cr>", desc = "Toggle Remark Preview" },
+        { "<leader>me", "<cmd>RemarkPreviewExport<cr>", desc = "Export markdown to PDF" },
     },
 }
 ```

@@ -19,12 +19,12 @@ local function get_plugin_path()
     return vim.fn.fnamemodify(debug.getinfo(1).source:sub(2), ":h:h:h")
 end
 
-local function get_templates_path(file)
-    return vim.fs.joinpath(get_plugin_path(), "templates", file)
+local function get_engine_path(file)
+    return vim.fs.joinpath(get_plugin_path(), "preview-engine", file)
 end
 
-local remark_bin = get_templates_path("node_modules/.bin/remark")
-local server_bin = get_templates_path("node_modules/.bin/live-server")
+local remark_bin = get_engine_path("node_modules/.bin/remark")
+local server_bin = get_engine_path("node_modules/.bin/live-server")
 
 local REQUIRED_BINS = { "node", "npm", remark_bin, server_bin }
 
@@ -49,7 +49,7 @@ local function check_dependencies()
 end
 
 function M.install_deps()
-    local path = get_templates_path("")
+    local path = get_engine_path("")
     local cmd = "cd " .. vim.fn.shellescape(path) .. " && npm install"
 
     vim.notify("remark-preview: Installing dependencies in " .. path, vim.log.levels.INFO)
@@ -59,7 +59,7 @@ function M.install_deps()
 end
 
 local function run_remark(input, output, theme_override)
-    local remark_config = get_templates_path("remarkrc.js")
+    local remark_config = get_engine_path("remarkrc.js")
     local doc_dir = vim.fn.expand("%:p:h")
     local active_theme = theme_override or M.config.theme
 
@@ -99,7 +99,7 @@ function M.export_pdf()
     local input = vim.fn.expand("%:p")
     local output_pdf = vim.fn.expand("%:p:r") .. ".pdf"
     local temp_html = vim.fs.joinpath(temp_dir, "export_temp.html")
-    local export_script = get_templates_path("export.js")
+    local export_script = get_engine_path("export.js")
 
     vim.notify("Exporting to PDF (Print Theme)...", vim.log.levels.INFO)
     run_remark(input, temp_html, "print")
