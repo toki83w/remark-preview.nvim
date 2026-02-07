@@ -109,10 +109,9 @@ export default {
           window.addEventListener('DOMContentLoaded', () => {
               // 1. Sidebar Injection
               const sidebar = document.createElement('div');
-              sidebar.className = 'toc-sidebar open';
+              sidebar.className = 'toc-sidebar';
               sidebar.innerHTML = '<h3>Contents</h3><ul id="sb-list"></ul>';
               document.body.appendChild(sidebar);
-              document.body.classList.add('sidebar-open');
 
               const sbList = document.getElementById('sb-list');
               const headings = document.querySelectorAll('h1, h2, h3, h4');
