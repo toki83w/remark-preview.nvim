@@ -80,10 +80,10 @@ export default {
             html { scroll-behavior: smooth; }
             @media screen {
                 :root { --sidebar-width: 260px; }
-                body { 
-                    transition: margin-left 0.3s; 
-                    margin-left: 45px; 
-                    font-family: "Noto Sans", sans-serif !important; 
+                body {
+                    transition: margin-left 0.3s;
+                    margin-left: 45px;
+                    font-family: "Noto Sans", sans-serif !important;
                 }
                 body.sidebar-open { margin-left: var(--sidebar-width); }
 
@@ -98,12 +98,12 @@ export default {
                 }
                 .toc-sidebar.open { left: 0; }
                 .toc-sidebar h3 { font-size: 1.1em; color: #cba6f7; margin-bottom: 15px; font-weight: 700; }
-                .toc-sidebar a { 
-                    display: block; padding: 6px 10px; text-decoration: none; 
+                .toc-sidebar a {
+                    display: block; padding: 6px 10px; text-decoration: none;
                     color: #a6adc8; font-size: 0.85em; border-radius: 6px;
                 }
                 .toc-sidebar a.active { background: #89b4fa22; color: #89b4fa; font-weight: 700; }
-                
+
                 .toc-toggle {
                     position: fixed; left: 10px; top: 10px; z-index: 1001;
                     font-family: "Noto Sans", sans-serif !important;
