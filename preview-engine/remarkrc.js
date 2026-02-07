@@ -35,6 +35,13 @@ let themeFile =
       ? "print.css"
       : "dark.css";
 
+let ghAlertsStylePath = "node_modules/remark-github-alerts/styles";
+let ghAlertsBaseStyle = "github-base.css";
+let ghAlertsStyle =
+  themeFile === "dark"
+    ? "github-colors-dark-class.css"
+    : "github-colors-light.css";
+
 let cssContent = "";
 try {
   cssContent = readFileSync(join(engineDir, themeFile), "utf8");
@@ -42,6 +49,18 @@ try {
   cssContent =
     'body { font-family: "Noto Sans", sans-serif; background: #ff0000; }';
 }
+
+try {
+  let ghAlertsBaseContent = readFileSync(
+    join(engineDir, ghAlertsStylePath, ghAlertsBaseStyle),
+    "utf8",
+  );
+  let ghAlertsContent = readFileSync(
+    join(engineDir, ghAlertsStylePath, ghAlertsStyle),
+    "utf8",
+  );
+  cssContent = cssContent + "\n" + ghAlertsBaseContent + "\n" + ghAlertsContent;
+} catch (e) {}
 
 // adds a white background to the img with alt property equal to a diagram name,
 // to improve the visibility of transparent diagrams (mermaid) in the dark theme
