@@ -13,6 +13,7 @@ import remarkRehype from "remark-rehype";
 import { join } from "node:path";
 import { readFileSync } from "node:fs";
 import { remarkKroki } from "remark-kroki";
+import { remarkMark } from "remark-mark-highlight";
 
 const engineDir = process.env.ENGINE_PATH;
 const docDir = process.env.DOC_DIR;
@@ -47,6 +48,7 @@ export default {
         alias: ["mermaid", "plantuml", "svgbob", "wavedrom", "bytefield"],
       },
     ],
+    remarkMark,
     [
       remarkFlexibleToc,
       {

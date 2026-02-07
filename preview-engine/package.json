@@ -17,6 +17,7 @@
     "remark-gfm": "latest",
     "remark-github-alerts": "latest",
     "remark-kroki": "latest",
+    "remark-mark-highlight": "^0.1.1",
     "remark-math": "latest",
     "remark-parse": "latest",
     "remark-rehype": "latest"

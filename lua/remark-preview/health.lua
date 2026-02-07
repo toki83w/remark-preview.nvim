@@ -58,6 +58,7 @@ function M.check()
         "remark-gfm",
         "remark-github-alerts",
         "remark-kroki",
+        "remark-mark-highlight",
         "remark-math",
         "remark-parse",
         "remark-rehype",
