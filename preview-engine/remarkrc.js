@@ -39,7 +39,14 @@ export default {
     remarkGfm,
     remarkGithubAlerts,
     remarkMath,
-    [remarkKroki, { server: "https://kroki.io", output: "inline-svg" }],
+    [
+      remarkKroki,
+      {
+        server: "https://kroki.io",
+        output: "img-html-base64",
+        alias: ["mermaid", "plantuml", "svgbob", "wavedrom", "bytefield"],
+      },
+    ],
     [
       remarkFlexibleToc,
       {
@@ -180,6 +187,6 @@ export default {
         `,
       },
     ],
-    rehypeStringify,
+    [rehypeStringify, { allowDangerousHtml: true }],
   ],
 };
