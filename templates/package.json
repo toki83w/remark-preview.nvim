@@ -1,0 +1,23 @@
+{
+  "name": "remark-preview-templates",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@widcardw/rehype-asciimath": "latest",
+    "puppeteer": "latest",
+    "rehype-document": "latest",
+    "rehype-katex": "latest",
+    "rehype-slug": "latest",
+    "rehype-stringify": "latest",
+    "remark-cli": "latest",
+    "remark-flexible-toc": "latest",
+    "remark-gfm": "latest",
+    "remark-github-alerts": "latest",
+    "remark-kroki": "latest",
+    "remark-math": "latest",
+    "remark-parse": "latest",
+    "remark-rehype": "latest",
+    "live-server": "latest"
+  }
+}

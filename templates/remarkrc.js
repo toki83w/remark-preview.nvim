@@ -4,7 +4,7 @@ import remarkParse from "remark-parse";
 import remarkGfm from "remark-gfm";
 import remarkGithubAlerts from "remark-github-alerts";
 import remarkMath from "remark-math";
-import remarkKroki from "remark-kroki";
+import { remarkKroki } from "remark-kroki";
 import remarkFlexibleToc from "remark-flexible-toc";
 import remarkRehype from "remark-rehype";
 import rehypeAsciimath from "@widcardw/rehype-asciimath";

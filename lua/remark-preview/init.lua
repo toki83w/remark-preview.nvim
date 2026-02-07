@@ -13,12 +13,20 @@ M.config = {
     },
 }
 
-local REQUIRED_BINS = { "node", "npm", "remark", "live-server" }
-
-local function get_plugin_path(file)
-    local plugin_root = vim.fn.fnamemodify(debug.getinfo(1).source:sub(2), ":h:h:h")
-    return vim.fs.joinpath(plugin_root, "templates", file)
+-- Helper to get the absolute path to the plugin root
+local function get_plugin_path()
+    -- Gets the root path of the plugin
+    return vim.fn.fnamemodify(debug.getinfo(1).source:sub(2), ":h:h:h")
 end
+
+local function get_templates_path(file)
+    return vim.fs.joinpath(get_plugin_path(), "templates", file)
+end
+
+local remark_bin = get_templates_path("node_modules/.bin/remark")
+local server_bin = get_templates_path("node_modules/.bin/live-server")
+
+local REQUIRED_BINS = { "node", "npm", remark_bin, server_bin }
 
 local function get_paths()
     local name = vim.fn.expand("%:t:r")
@@ -41,35 +49,23 @@ local function check_dependencies()
 end
 
 function M.install_deps()
-    local pkgs = {
-        "remark-cli",
-        "remark-parse",
-        "remark-gfm",
-        "remark-github-alerts",
-        "remark-math",
-        "remark-asciimath",
-        "remark-kroki",
-        "remark-flexible-toc",
-        "remark-rehype",
-        "rehype-slug",
-        "rehype-katex",
-        "rehype-document",
-        "rehype-stringify",
-        "live-server",
-        "puppeteer",
-    }
-    local cmd = "npm install -g " .. table.concat(pkgs, " ")
-    vim.notify("remark-preview: Installing dependencies...", vim.log.levels.INFO)
+    local path = get_templates_path("")
+    local cmd = "cd " .. vim.fn.shellescape(path) .. " && npm install"
+
+    vim.notify("remark-preview: Installing dependencies in " .. path, vim.log.levels.INFO)
+
+    -- Run in a terminal split so the user can see progress
     vim.cmd("split | term " .. cmd)
 end
 
 local function run_remark(input, output, theme_override)
-    local remark_config = get_plugin_path("remarkrc.js")
+    local remark_config = get_templates_path("remarkrc.js")
     local doc_dir = vim.fn.expand("%:p:h")
     local active_theme = theme_override or M.config.theme
 
     local cmd = string.format(
-        "remark %s --rc-path %s --output %s",
+        "%s %s --rc-path %s --output %s",
+        remark_bin,
         vim.fn.shellescape(input),
         vim.fn.shellescape(remark_config),
         vim.fn.shellescape(output)
@@ -103,7 +99,7 @@ function M.export_pdf()
     local input = vim.fn.expand("%:p")
     local output_pdf = vim.fn.expand("%:p:r") .. ".pdf"
     local temp_html = vim.fs.joinpath(temp_dir, "export_temp.html")
-    local export_script = get_plugin_path("export.js")
+    local export_script = get_templates_path("export.js")
 
     vim.notify("Exporting to PDF (Print Theme)...", vim.log.levels.INFO)
     run_remark(input, temp_html, "print")
@@ -139,7 +135,7 @@ function M.toggle()
     if vim.g.markdown_preview_active then
         if not server_job_id then
             server_job_id = vim.fn.jobstart(
-                string.format("live-server %s --port=%d --no-browser", vim.fn.shellescape(temp_dir), port)
+                string.format("%s %s --port=%d --no-browser", server_bin, vim.fn.shellescape(temp_dir), port)
             )
         end
         run_remark(vim.fn.expand("%:p"), output_path)
