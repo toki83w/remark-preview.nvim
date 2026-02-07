@@ -1,17 +1,18 @@
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
-import remarkParse from "remark-parse";
+import rehypeAsciimath from "@widcardw/rehype-asciimath";
+import rehypeDocument from "rehype-document";
+import rehypeHighlight from "rehype-highlight";
+import rehypeKatex from "rehype-katex";
+import rehypeSlug from "rehype-slug";
+import rehypeStringify from "rehype-stringify";
+import remarkFlexibleToc from "remark-flexible-toc";
 import remarkGfm from "remark-gfm";
 import remarkGithubAlerts from "remark-github-alerts";
 import remarkMath from "remark-math";
-import { remarkKroki } from "remark-kroki";
-import remarkFlexibleToc from "remark-flexible-toc";
+import remarkParse from "remark-parse";
 import remarkRehype from "remark-rehype";
-import rehypeAsciimath from "@widcardw/rehype-asciimath";
-import rehypeSlug from "rehype-slug";
-import rehypeKatex from "rehype-katex";
-import rehypeDocument from "rehype-document";
-import rehypeStringify from "rehype-stringify";
+import { join } from "node:path";
+import { readFileSync } from "node:fs";
+import { remarkKroki } from "remark-kroki";
 
 const engineDir = process.env.ENGINE_PATH;
 const docDir = process.env.DOC_DIR;
@@ -51,6 +52,7 @@ export default {
     rehypeSlug,
     rehypeAsciimath,
     rehypeKatex,
+    rehypeHighlight,
     [
       rehypeDocument,
       {
@@ -61,7 +63,10 @@ export default {
             properties: { href: "file://" + docDir + "/" },
           },
         ],
-        css: ["https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css"],
+        css: [
+          "https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css",
+          "https://cdn.jsdelivr.net/npm/@catppuccin/highlightjs@1.0.1/css/catppuccin-mocha.css",
+        ],
         style:
           cssContent +
           `

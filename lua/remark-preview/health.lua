@@ -46,8 +46,10 @@ function M.check()
     vim.health.info("Checking NPM Packages...")
     local required_pkgs = {
         "@widcardw/rehype-asciimath",
+        "live-server",
         "puppeteer",
         "rehype-document",
+        "rehype-highlight",
         "rehype-katex",
         "rehype-slug",
         "rehype-stringify",
@@ -59,7 +61,6 @@ function M.check()
         "remark-math",
         "remark-parse",
         "remark-rehype",
-        "live-server",
     }
 
     for _, pkg in ipairs(required_pkgs) do

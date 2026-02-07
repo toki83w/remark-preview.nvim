@@ -5,8 +5,10 @@
   "type": "module",
   "dependencies": {
     "@widcardw/rehype-asciimath": "latest",
+    "live-server": "latest",
     "puppeteer": "latest",
     "rehype-document": "latest",
+    "rehype-highlight": "^7.0.2",
     "rehype-katex": "latest",
     "rehype-slug": "latest",
     "rehype-stringify": "latest",
@@ -17,7 +19,6 @@
     "remark-kroki": "latest",
     "remark-math": "latest",
     "remark-parse": "latest",
-    "remark-rehype": "latest",
-    "live-server": "latest"
+    "remark-rehype": "latest"
   }
 }
