@@ -127,31 +127,68 @@ function M.export_pdf()
     end, 1500)
 end
 
-function M.toggle()
-    vim.g.markdown_preview_active = not vim.g.markdown_preview_active
-    local _, output_path, html_filename, _ = get_paths()
-    local port = M.config.port_base + (vim.fn.getpid() % 1000)
+local function compute_port()
+    return M.config.port_base + (vim.fn.getpid() % 1000)
+end
 
-    if vim.g.markdown_preview_active then
-        if not server_job_id then
-            server_job_id = vim.fn.jobstart(
-                string.format("%s %s --port=%d --no-browser", server_bin, vim.fn.shellescape(temp_dir), port)
-            )
-        end
-        run_remark(vim.fn.expand("%:p"), output_path)
-        local opener = is_windows and 'start "" ' or "xdg-open "
-        vim.fn.jobstart(opener .. string.format("http://127.0.0.1:%d/%s", port, html_filename), { shell = is_windows })
-    else
-        if server_job_id then
-            vim.fn.jobstop(server_job_id)
-        end
+local function start_server(port)
+    if not server_job_id then
+        server_job_id = vim.fn.jobstart(
+            string.format("%s %s --port=%d --no-browser", server_bin, vim.fn.shellescape(temp_dir), port)
+        )
+    end
+end
+
+local function stop_server()
+    if server_job_id then
+        vim.fn.jobstop(server_job_id)
         server_job_id = nil
     end
 end
 
+local function open_preview(port, html_filename)
+    local opener = is_windows and 'start "" ' or "xdg-open "
+    vim.fn.jobstart(opener .. string.format("http://127.0.0.1:%d/%s", port, html_filename), { shell = is_windows })
+end
+
+function M.toggle()
+    vim.g.markdown_preview_active = not vim.g.markdown_preview_active
+    local _, output_path, html_filename, _ = get_paths()
+    local port = compute_port()
+
+    if vim.g.markdown_preview_active then
+        start_server(port)
+        run_remark(vim.fn.expand("%:p"), output_path)
+        open_preview(port, html_filename)
+    else
+        stop_server()
+    end
+end
+
+function M.open()
+    if not vim.g.markdown_preview_active then
+        M.toggle()
+        return
+    end
+
+    local _, _, html_filename, _ = get_paths()
+    local port = compute_port()
+
+    open_preview(port, html_filename)
+end
+
+function M.restart()
+    if vim.g.markdown_preview_active then
+        M.toggle()
+    end
+    M.toggle()
+end
+
 function M.setup(opts)
     M.config = vim.tbl_deep_extend("force", M.config, opts or {})
+    vim.api.nvim_create_user_command("RemarkPreviewOpen", M.open, {})
     vim.api.nvim_create_user_command("RemarkPreviewToggle", M.toggle, {})
+    vim.api.nvim_create_user_command("RemarkPreviewRestart", M.restart, {})
     vim.api.nvim_create_user_command("RemarkPreviewInstall", M.install_deps, {})
     vim.api.nvim_create_user_command("RemarkPreviewExport", M.export_pdf, {})
 
