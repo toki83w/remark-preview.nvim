@@ -74,7 +74,7 @@ local function run_remark(input, output, theme_override)
     vim.fn.jobstart(cmd, {
         env = {
             PREVIEW_THEME = active_theme,
-            PLUGIN_PATH = vim.fn.fnamemodify(get_plugin_path(""), ":h"),
+            ENGINE_PATH = get_engine_path(""),
             DOC_DIR = doc_dir,
         },
         on_exit = function(_, exit_code)
