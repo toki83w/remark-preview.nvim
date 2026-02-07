@@ -1,5 +1,6 @@
 /* Catppuccin Mocha base */
 @import url("https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.2.0/github-markdown-dark.min.css");
+@import url("https://unpkg.com/rehype-callouts/dist/themes/obsidian/index.css");
 
 /* Force Catppuccin Mocha colors for all content */
 body {
@@ -124,29 +125,6 @@ body td {
   padding: 0.5em 1em;
 }
 
-/* Alerts (Mocha) */
-.markdown-alert {
-  border-left: 0.25em solid !important;
-  border-radius: 0 6px 6px 0 !important;
-  padding: 0.5rem 1rem !important;
-  margin-bottom: 16px !important;
-}
-.markdown-alert.markdown-alert-note {
-  border-left-color: #89b4fa !important;
-}
-.markdown-alert.markdown-alert-tip {
-  border-left-color: #a6e3a1 !important;
-}
-.markdown-alert.markdown-alert-warning {
-  border-left-color: #f9e2af !important;
-}
-.markdown-alert.markdown-alert-important {
-  border-left-color: #cba6f7 !important;
-}
-.markdown-alert.markdown-alert-caution {
-  border-left-color: #f38ba8 !important;
-}
-
 /* Custom Tasks */
 .task-important {
   color: #f38ba8 !important;
@@ -161,4 +139,63 @@ body td {
 /* KaTeX */
 .katex {
   color: #cdd6f4 !important;
+}
+
+/* Callouts */
+.callout {
+  width: auto;
+  border-width: 1px;
+  border-style: solid;
+  border-color: var(--rc-color-dark, var(--rc-color-default));
+}
+
+[data-callout="abstract"],
+[data-callout="summary"],
+[data-callout="tldr"],
+[data-callout="tip"],
+[data-callout="hint"],
+[data-callout="important"] {
+  --rc-color-dark: #74c7ec;
+}
+
+[data-callout="note"],
+[data-callout="info"],
+[data-callout="todo"] {
+  --rc-color-dark: #89b4fa;
+}
+
+[data-callout="success"],
+[data-callout="check"],
+[data-callout="done"] {
+  --rc-color-dark: #a6e3a1;
+}
+
+[data-callout="question"],
+[data-callout="help"],
+[data-callout="faq"] {
+  --rc-color-dark: #f9e2af;
+}
+
+[data-callout="warning"],
+[data-callout="attention"],
+[data-callout="caution"] {
+  --rc-color-dark: #fab387;
+}
+
+[data-callout="failure"],
+[data-callout="missing"],
+[data-callout="fail"],
+[data-callout="danger"],
+[data-callout="error"],
+[data-callout="bug"] {
+  --rc-color-dark: #f38ba8;
+}
+
+[data-callout="example"] {
+  --rc-color-dark: #cba6f7;
+}
+
+[data-callout="quote"],
+[data-callout="cite"] {
+  --rc-color-dark: #9399b2;
 }

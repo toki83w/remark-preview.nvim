@@ -1,4 +1,5 @@
 import rehypeAsciimath from "@widcardw/rehype-asciimath";
+import rehypeCallouts from "rehype-callouts";
 import rehypeDocument from "rehype-document";
 import rehypeHighlight from "rehype-highlight";
 import rehypeKatex from "rehype-katex";
@@ -6,7 +7,6 @@ import rehypeSlug from "rehype-slug";
 import rehypeStringify from "rehype-stringify";
 import remarkFlexibleToc from "remark-flexible-toc";
 import remarkGfm from "remark-gfm";
-import remarkGithubAlerts from "remark-github-alerts";
 import remarkMath from "remark-math";
 import remarkParse from "remark-parse";
 import remarkRehype from "remark-rehype";
@@ -35,12 +35,6 @@ let themeFile =
       ? "print.css"
       : "dark.css";
 
-let ghAlertsStylePath = "node_modules/remark-github-alerts/styles";
-let ghAlertsBaseStyle = "github-base.css";
-let ghAlertsStyle =
-  themeFile === "dark"
-    ? "github-colors-dark-class.css"
-    : "github-colors-light.css";
 
 let cssContent = "";
 try {
@@ -50,17 +44,7 @@ try {
     'body { font-family: "Noto Sans", sans-serif; background: #ff0000; }';
 }
 
-try {
-  let ghAlertsBaseContent = readFileSync(
-    join(engineDir, ghAlertsStylePath, ghAlertsBaseStyle),
-    "utf8",
-  );
-  let ghAlertsContent = readFileSync(
-    join(engineDir, ghAlertsStylePath, ghAlertsStyle),
-    "utf8",
-  );
-  cssContent = cssContent + "\n" + ghAlertsBaseContent + "\n" + ghAlertsContent;
-} catch (e) {}
+let classList = theme === "dark" ? "document.body.classList.add('dark');" : "";
 
 // adds a white background to the img with alt property equal to a diagram name,
 // to improve the visibility of transparent diagrams (mermaid) in the dark theme
@@ -92,7 +76,6 @@ export default {
   plugins: [
     remarkParse,
     remarkGfm,
-    remarkGithubAlerts,
     remarkMath,
     [
       remarkKroki,
@@ -117,6 +100,7 @@ export default {
     rehypeAsciimath,
     rehypeKatex,
     rehypeHighlight,
+    rehypeCallouts,
     [
       rehypeDocument,
       {
@@ -174,7 +158,9 @@ export default {
                 .task-icon { margin-right: 10px; font-style: normal; }
             }
         `,
-        script: `
+        script:
+          classList +
+          `
           window.addEventListener('DOMContentLoaded', () => {
               // 1. Sidebar Injection
               const sidebar = document.createElement('div');
