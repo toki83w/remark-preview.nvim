@@ -127,7 +127,48 @@ body td {
   padding: 0.5em 1em;
 }
 
-/* Custom Tasks */
+/* Task lists */
+.contains-task-list {
+  list-style-type: none !important; /* hide the bullet points */
+  padding-left: 10px !important;
+}
+
+li.task-list-item > ul.contains-task-list {
+  padding-left: 40px !important; /* indentation for nested lists */
+}
+
+/* checkbox unchecked */
+.task-list-item input[type="checkbox"] {
+  pointer-events: none;
+  margin-right: 0.5em;
+
+  appearance: none; /* Removes the default check and box */
+  -webkit-appearance: none;
+
+  width: 1.2em;
+  height: 1.2em;
+  border: 1px solid #f38ba8 !important; /* red */
+  border-radius: 4px;
+  display: inline-grid;
+  place-content: center;
+  background-color: #f38ba81f !important; /* transparent red */
+}
+
+.task-list-item input[type="checkbox"]:checked:before {
+  content: "✔";
+}
+
+.task-list-item input[type="checkbox"]:checked {
+  background-color: #a6e3a1 !important; /* green */
+  border: 1px solid #9399b2 !important; /* overlay 2 */
+}
+
+.task-list-item:has(input:checked) {
+  color: #a6e3a1 !important; /* green */
+  text-decoration: none !important;
+}
+
+/* Custom Tasks - TODO */
 .task-important {
   color: #f38ba8 !important;
 }
