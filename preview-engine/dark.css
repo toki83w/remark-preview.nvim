@@ -105,8 +105,10 @@ body kbd {
 body blockquote {
   background-color: #1e1e2e !important;
   color: #f5e0dc !important;
-  border-left: 4px solid #9399b2 !important;
+  border-left: 3px solid #b4befe !important;
   font-family: "NotoSans Nerd Font", "Noto Sans", sans-serif !important;
+  margin-left: 0px !important;
+  padding-left: 20px !important;
 }
 
 /* Tables */
