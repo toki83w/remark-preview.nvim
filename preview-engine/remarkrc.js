@@ -4,6 +4,7 @@ import remarkCustomTasks from "./remark-custom-tasks.js";
 import rehypeDocument from "rehype-document";
 import rehypeHighlight from "rehype-highlight";
 import rehypeKatex from "rehype-katex";
+import rehypeKrokiImgBg from "./rehype-kroki-img-bg.js";
 import rehypeSlug from "rehype-slug";
 import rehypeStringify from "rehype-stringify";
 import remarkFlexibleToc from "remark-flexible-toc";
@@ -15,12 +16,11 @@ import { join } from "node:path";
 import { readFileSync } from "node:fs";
 import { remarkKroki } from "remark-kroki";
 import { remarkMark } from "remark-mark-highlight";
-import { visit } from "unist-util-visit";
 
 const engineDir = process.env.ENGINE_PATH;
 const docDir = process.env.DOC_DIR;
 const theme = process.env.PREVIEW_THEME || "dark";
-const kroki_aliases = [
+const krokiAliases = [
   "bytefield",
   "graphviz",
   "mermaid",
@@ -46,32 +46,6 @@ try {
 
 let classList = theme === "dark" ? "document.body.classList.add('dark');" : "";
 
-// adds a white background to the img with alt property equal to a diagram name,
-// to improve the visibility of transparent diagrams (mermaid) in the dark theme
-function rehypeImgBg() {
-  return (tree) => {
-    visit(tree, "element", (node, index, parent) => {
-      if (
-        node.tagName === "img" &&
-        parent &&
-        Array.isArray(parent.children) &&
-        node.properties &&
-        kroki_aliases.includes(node.properties.alt)
-      ) {
-        parent.children.splice(index, 1, {
-          type: "element",
-          tagName: "div",
-          properties: {
-            style:
-              "background:#fff;padding:8px;display:inline-block;border-radius:6px;",
-          },
-          children: [node],
-        });
-      }
-    });
-  };
-}
-
 export default {
   plugins: [
     remarkParse,
@@ -83,7 +57,7 @@ export default {
       {
         server: "https://kroki.io",
         output: "img-base64",
-        alias: kroki_aliases,
+        alias: krokiAliases,
       },
     ],
     remarkMark,
@@ -96,7 +70,7 @@ export default {
       },
     ],
     [remarkRehype, { allowDangerousHtml: true }],
-    rehypeImgBg,
+    [rehypeKrokiImgBg, { aliases: krokiAliases }],
     rehypeSlug,
     rehypeAsciimath,
     rehypeKatex,
