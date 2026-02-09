@@ -8,6 +8,7 @@ import rehypeKrokiImgBg from "./rehype-kroki-img-bg.js";
 import rehypeSlug from "rehype-slug";
 import rehypeStringify from "rehype-stringify";
 import rehypeThemeClass from "./rehype-theme-class.js";
+import remarkAmpersandMath from "./remark-ampersand-math.js";
 import remarkFlexibleToc from "remark-flexible-toc";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
@@ -52,7 +53,7 @@ export default {
     remarkParse,
     remarkCustomTasks,
     [remarkGfm, { singleTilde: false }],
-    remarkSubSuper,
+    remarkAmpersandMath,
     remarkMath,
     [
       remarkKroki,
@@ -63,6 +64,7 @@ export default {
       },
     ],
     remarkMark,
+    remarkSubSuper,
     [
       remarkFlexibleToc,
       {
