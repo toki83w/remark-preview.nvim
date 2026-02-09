@@ -7,6 +7,7 @@ import rehypeKatex from "rehype-katex";
 import rehypeKrokiImgBg from "./rehype-kroki-img-bg.js";
 import rehypeSlug from "rehype-slug";
 import rehypeStringify from "rehype-stringify";
+import rehypeThemeClass from "./rehype-theme-class.js";
 import remarkFlexibleToc from "remark-flexible-toc";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
@@ -44,7 +45,6 @@ try {
     'body { font-family: "Noto Sans", sans-serif; background: #ff0000; }';
 }
 
-let classList = theme === "dark" ? "document.body.classList.add('dark');" : "";
 
 export default {
   plugins: [
@@ -129,9 +129,7 @@ export default {
                 }
             }
         `,
-        script:
-          classList +
-          `
+        script: `
           window.addEventListener('DOMContentLoaded', () => {
               // 1. Sidebar Injection
               const sidebar = document.createElement('div');
@@ -186,6 +184,7 @@ export default {
         `,
       },
     ],
+    [rehypeThemeClass, { theme: theme }],
     [rehypeStringify, { allowDangerousHtml: true }],
   ],
 };
