@@ -13,6 +13,7 @@ import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import remarkParse from "remark-parse";
 import remarkRehype from "remark-rehype";
+import remarkSubSuper from "./remark-sub-super.js";
 import { join } from "node:path";
 import { readFileSync } from "node:fs";
 import { remarkKroki } from "remark-kroki";
@@ -50,7 +51,8 @@ export default {
   plugins: [
     remarkParse,
     remarkCustomTasks,
-    remarkGfm,
+    [remarkGfm, { singleTilde: false }],
+    remarkSubSuper,
     remarkMath,
     [
       remarkKroki,
