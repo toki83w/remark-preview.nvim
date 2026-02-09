@@ -1,5 +1,6 @@
 import rehypeAsciimath from "@widcardw/rehype-asciimath";
 import rehypeCallouts from "rehype-callouts";
+import remarkCustomTasks from "./remark-custom-tasks.js";
 import rehypeDocument from "rehype-document";
 import rehypeHighlight from "rehype-highlight";
 import rehypeKatex from "rehype-katex";
@@ -34,7 +35,6 @@ let themeFile =
     : theme === "print"
       ? "print.css"
       : "dark.css";
-
 
 let cssContent = "";
 try {
@@ -75,6 +75,7 @@ function rehypeImgBg() {
 export default {
   plugins: [
     remarkParse,
+    remarkCustomTasks,
     remarkGfm,
     remarkMath,
     [
@@ -152,10 +153,6 @@ export default {
                     width: 32px; height: 32px; display: flex;
                     align-items: center; justify-content: center; border-radius: 8px;
                 }
-
-                li.custom-task { list-style: none !important; }
-                li.custom-task input { display: none !important; }
-                .task-icon { margin-right: 10px; font-style: normal; }
             }
         `,
         script:
@@ -202,21 +199,6 @@ export default {
                   });
               }, { rootMargin: '0px 0px -80% 0px' });
               headings.forEach(h => observer.observe(h));
-
-              // 4. Custom Task Markers
-              document.querySelectorAll('li').forEach(li => {
-                  const content = li.innerHTML.trim();
-                  if (content.includes('[!]')) {
-                      li.classList.add('task-important', 'custom-task');
-                      li.innerHTML = li.innerHTML.replace('[!]', '<i class="task-icon">❗</i>');
-                  } else if (content.includes('[?]')) {
-                      li.classList.add('task-question', 'custom-task');
-                      li.innerHTML = li.innerHTML.replace('[?]', '<i class="task-icon">❓</i>');
-                  } else if (content.includes('[>]')) {
-                      li.classList.add('task-ongoing', 'custom-task');
-                      li.innerHTML = li.innerHTML.replace('[>]', '<i class="task-icon">⏳</i>');
-                  }
-              });
           });
 
           // 5. Scroll Sync

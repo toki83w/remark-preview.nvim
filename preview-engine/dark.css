@@ -154,6 +154,11 @@ li.task-list-item > ul.contains-task-list {
   background-color: #f38ba81f !important; /* transparent red */
 }
 
+.task-list-item input[type="checkbox"]:before {
+  /* hack for check box alignment */
+  content: "✔";
+  color: transparent;
+}
 .task-list-item input[type="checkbox"]:checked:before {
   content: "✔";
 }
@@ -168,14 +173,27 @@ li.task-list-item > ul.contains-task-list {
   text-decoration: none !important;
 }
 
-/* Custom Tasks - TODO */
+/* custom tasks */
+.custom-task input[type="checkbox"] {
+  width: 1em;
+  height: 1em;
+  border: none !important;
+  font-size: medium !important;
+  background-color: transparent !important;
+}
 .task-important {
   color: #f38ba8 !important;
 }
-.task-question {
+.task-important input[type="checkbox"]:before {
+  content: " ";
+  color: #f38ba8 !important;
+}
+.task-question input[type="checkbox"]:before {
+  content: " ";
   color: #f9e2af !important;
 }
-.task-ongoing {
+.task-ongoing input[type="checkbox"]:before {
+  content: " ";
   color: #89b4fa !important;
 }
 
