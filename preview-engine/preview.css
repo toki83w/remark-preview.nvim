@@ -1,0 +1,435 @@
+@import url("https://unpkg.com/rehype-callouts/dist/themes/obsidian/index.css");
+@import url("https://unpkg.com/@catppuccin/palette/css/catppuccin.css");
+
+@layer light, dark;
+
+@import "https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.8.1/github-markdown-light.min.css"
+  layer(light);
+
+@scope (.dark) {
+  @import url("https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.8.1/github-markdown-dark.min.css")
+  layer(dark);
+}
+
+/* light theme */
+:root {
+  --rosewater: var(--ctp-latte-rosewater);
+  --rosewater-rgb: var(--ctp-latte-rosewater-rgb);
+  --rosewater-hsl: var(--ctp-latte-rosewater-hsl);
+  --flamingo: var(--ctp-latte-flamingo);
+  --flamingo-rgb: var(--ctp-latte-flamingo-rgb);
+  --flamingo-hsl: var(--ctp-latte-flamingo-hsl);
+  --pink: var(--ctp-latte-pink);
+  --pink-rgb: var(--ctp-latte-pink-rgb);
+  --pink-hsl: var(--ctp-latte-pink-hsl);
+  --mauve: var(--ctp-latte-mauve);
+  --mauve-rgb: var(--ctp-latte-mauve-rgb);
+  --mauve-hsl: var(--ctp-latte-mauve-hsl);
+  --red: var(--ctp-latte-red);
+  --red-rgb: var(--ctp-latte-red-rgb);
+  --red-hsl: var(--ctp-latte-red-hsl);
+  --maroon: var(--ctp-latte-maroon);
+  --maroon-rgb: var(--ctp-latte-maroon-rgb);
+  --maroon-hsl: var(--ctp-latte-maroon-hsl);
+  --peach: var(--ctp-latte-peach);
+  --peach-rgb: var(--ctp-latte-peach-rgb);
+  --peach-hsl: var(--ctp-latte-peach-hsl);
+  --yellow: var(--ctp-latte-yellow);
+  --yellow-rgb: var(--ctp-latte-yellow-rgb);
+  --yellow-hsl: var(--ctp-latte-yellow-hsl);
+  --green: var(--ctp-latte-green);
+  --green-rgb: var(--ctp-latte-green-rgb);
+  --green-hsl: var(--ctp-latte-green-hsl);
+  --teal: var(--ctp-latte-teal);
+  --teal-rgb: var(--ctp-latte-teal-rgb);
+  --teal-hsl: var(--ctp-latte-teal-hsl);
+  --sky: var(--ctp-latte-sky);
+  --sky-rgb: var(--ctp-latte-sky-rgb);
+  --sky-hsl: var(--ctp-latte-sky-hsl);
+  --sapphire: var(--ctp-latte-sapphire);
+  --sapphire-rgb: var(--ctp-latte-sapphire-rgb);
+  --sapphire-hsl: var(--ctp-latte-sapphire-hsl);
+  --blue: var(--ctp-latte-blue);
+  --blue-rgb: var(--ctp-latte-blue-rgb);
+  --blue-hsl: var(--ctp-latte-blue-hsl);
+  --lavender: var(--ctp-latte-lavender);
+  --lavender-rgb: var(--ctp-latte-lavender-rgb);
+  --lavender-hsl: var(--ctp-latte-lavender-hsl);
+  --text: var(--ctp-latte-text);
+  --text-rgb: var(--ctp-latte-text-rgb);
+  --text-hsl: var(--ctp-latte-text-hsl);
+  --subtext1: var(--ctp-latte-subtext1);
+  --subtext1-rgb: var(--ctp-latte-subtext1-rgb);
+  --subtext1-hsl: var(--ctp-latte-subtext1-hsl);
+  --subtext0: var(--ctp-latte-subtext0);
+  --subtext0-rgb: var(--ctp-latte-subtext0-rgb);
+  --subtext0-hsl: var(--ctp-latte-subtext0-hsl);
+  --overlay2: var(--ctp-latte-overlay2);
+  --overlay2-rgb: var(--ctp-latte-overlay2-rgb);
+  --overlay2-hsl: var(--ctp-latte-overlay2-hsl);
+  --overlay1: var(--ctp-latte-overlay1);
+  --overlay1-rgb: var(--ctp-latte-overlay1-rgb);
+  --overlay1-hsl: var(--ctp-latte-overlay1-hsl);
+  --overlay0: var(--ctp-latte-overlay0);
+  --overlay0-rgb: var(--ctp-latte-overlay0-rgb);
+  --overlay0-hsl: var(--ctp-latte-overlay0-hsl);
+  --surface2: var(--ctp-latte-surface2);
+  --surface2-rgb: var(--ctp-latte-surface2-rgb);
+  --surface2-hsl: var(--ctp-latte-surface2-hsl);
+  --surface1: var(--ctp-latte-surface1);
+  --surface1-rgb: var(--ctp-latte-surface1-rgb);
+  --surface1-hsl: var(--ctp-latte-surface1-hsl);
+  --surface0: var(--ctp-latte-surface0);
+  --surface0-rgb: var(--ctp-latte-surface0-rgb);
+  --surface0-hsl: var(--ctp-latte-surface0-hsl);
+  --base: var(--ctp-latte-base);
+  --base-rgb: var(--ctp-latte-base-rgb);
+  --base-hsl: var(--ctp-latte-base-hsl);
+  --mantle: var(--ctp-latte-mantle);
+  --mantle-rgb: var(--ctp-latte-mantle-rgb);
+  --mantle-hsl: var(--ctp-latte-mantle-hsl);
+  --crust: var(--ctp-latte-crust);
+  --crust-rgb: var(--ctp-latte-crust-rgb);
+  --crust-hsl: var(--ctp-latte-crust-hsl);
+}
+
+/* dark theme */
+.dark {
+  --rosewater: var(--ctp-mocha-rosewater);
+  --rosewater-rgb: var(--ctp-mocha-rosewater-rgb);
+  --rosewater-hsl: var(--ctp-mocha-rosewater-hsl);
+  --flamingo: var(--ctp-mocha-flamingo);
+  --flamingo-rgb: var(--ctp-mocha-flamingo-rgb);
+  --flamingo-hsl: var(--ctp-mocha-flamingo-hsl);
+  --pink: var(--ctp-mocha-pink);
+  --pink-rgb: var(--ctp-mocha-pink-rgb);
+  --pink-hsl: var(--ctp-mocha-pink-hsl);
+  --mauve: var(--ctp-mocha-mauve);
+  --mauve-rgb: var(--ctp-mocha-mauve-rgb);
+  --mauve-hsl: var(--ctp-mocha-mauve-hsl);
+  --red: var(--ctp-mocha-red);
+  --red-rgb: var(--ctp-mocha-red-rgb);
+  --red-hsl: var(--ctp-mocha-red-hsl);
+  --maroon: var(--ctp-mocha-maroon);
+  --maroon-rgb: var(--ctp-mocha-maroon-rgb);
+  --maroon-hsl: var(--ctp-mocha-maroon-hsl);
+  --peach: var(--ctp-mocha-peach);
+  --peach-rgb: var(--ctp-mocha-peach-rgb);
+  --peach-hsl: var(--ctp-mocha-peach-hsl);
+  --yellow: var(--ctp-mocha-yellow);
+  --yellow-rgb: var(--ctp-mocha-yellow-rgb);
+  --yellow-hsl: var(--ctp-mocha-yellow-hsl);
+  --green: var(--ctp-mocha-green);
+  --green-rgb: var(--ctp-mocha-green-rgb);
+  --green-hsl: var(--ctp-mocha-green-hsl);
+  --teal: var(--ctp-mocha-teal);
+  --teal-rgb: var(--ctp-mocha-teal-rgb);
+  --teal-hsl: var(--ctp-mocha-teal-hsl);
+  --sky: var(--ctp-mocha-sky);
+  --sky-rgb: var(--ctp-mocha-sky-rgb);
+  --sky-hsl: var(--ctp-mocha-sky-hsl);
+  --sapphire: var(--ctp-mocha-sapphire);
+  --sapphire-rgb: var(--ctp-mocha-sapphire-rgb);
+  --sapphire-hsl: var(--ctp-mocha-sapphire-hsl);
+  --blue: var(--ctp-mocha-blue);
+  --blue-rgb: var(--ctp-mocha-blue-rgb);
+  --blue-hsl: var(--ctp-mocha-blue-hsl);
+  --lavender: var(--ctp-mocha-lavender);
+  --lavender-rgb: var(--ctp-mocha-lavender-rgb);
+  --lavender-hsl: var(--ctp-mocha-lavender-hsl);
+  --text: var(--ctp-mocha-text);
+  --text-rgb: var(--ctp-mocha-text-rgb);
+  --text-hsl: var(--ctp-mocha-text-hsl);
+  --subtext1: var(--ctp-mocha-subtext1);
+  --subtext1-rgb: var(--ctp-mocha-subtext1-rgb);
+  --subtext1-hsl: var(--ctp-mocha-subtext1-hsl);
+  --subtext0: var(--ctp-mocha-subtext0);
+  --subtext0-rgb: var(--ctp-mocha-subtext0-rgb);
+  --subtext0-hsl: var(--ctp-mocha-subtext0-hsl);
+  --overlay2: var(--ctp-mocha-overlay2);
+  --overlay2-rgb: var(--ctp-mocha-overlay2-rgb);
+  --overlay2-hsl: var(--ctp-mocha-overlay2-hsl);
+  --overlay1: var(--ctp-mocha-overlay1);
+  --overlay1-rgb: var(--ctp-mocha-overlay1-rgb);
+  --overlay1-hsl: var(--ctp-mocha-overlay1-hsl);
+  --overlay0: var(--ctp-mocha-overlay0);
+  --overlay0-rgb: var(--ctp-mocha-overlay0-rgb);
+  --overlay0-hsl: var(--ctp-mocha-overlay0-hsl);
+  --surface2: var(--ctp-mocha-surface2);
+  --surface2-rgb: var(--ctp-mocha-surface2-rgb);
+  --surface2-hsl: var(--ctp-mocha-surface2-hsl);
+  --surface1: var(--ctp-mocha-surface1);
+  --surface1-rgb: var(--ctp-mocha-surface1-rgb);
+  --surface1-hsl: var(--ctp-mocha-surface1-hsl);
+  --surface0: var(--ctp-mocha-surface0);
+  --surface0-rgb: var(--ctp-mocha-surface0-rgb);
+  --surface0-hsl: var(--ctp-mocha-surface0-hsl);
+  --base: var(--ctp-mocha-base);
+  --base-rgb: var(--ctp-mocha-base-rgb);
+  --base-hsl: var(--ctp-mocha-base-hsl);
+  --mantle: var(--ctp-mocha-mantle);
+  --mantle-rgb: var(--ctp-mocha-mantle-rgb);
+  --mantle-hsl: var(--ctp-mocha-mantle-hsl);
+  --crust: var(--ctp-mocha-crust);
+  --crust-rgb: var(--ctp-mocha-crust-rgb);
+  --crust-hsl: var(--ctp-mocha-crust-hsl);
+}
+
+body {
+  color: var(--text) !important;
+  font-family: "NotoSans Nerd Font", "Noto Sans", sans-serif !important;
+  background: transparent !important;
+  background-color: var(--base) !important;
+}
+
+/* Headings */
+body h1,
+body h1[id] {
+  color: var(--red) !important;
+}
+body h2,
+body h2[id] {
+  color: var(--peach) !important;
+}
+body h3,
+body h3[id] {
+  color: var(--yellow) !important;
+}
+body h4,
+body h4[id] {
+  color: var(--green) !important;
+}
+body h5,
+body h5[id] {
+  color: var(--sky) !important;
+}
+body h6,
+body h6[id] {
+  color: var(--lavender) !important;
+}
+
+/* Paragraphs */
+body p {
+  color: var(--text) !important;
+}
+
+/* Bold, Italic, Strikethrough, Highlight */
+body strong {
+  color: var(--sapphire) !important;
+}
+body em {
+  color: var(--green) !important;
+}
+body strong em,
+body em strong {
+  color: var(--teal) !important;
+}
+body del {
+  color: var(--red) !important;
+}
+body mark {
+  background-color: var(--rosewater) !important;
+  color: var(--base) !important;
+}
+
+/* Links */
+body a {
+  color: var(--blue) !important;
+}
+
+/* Lists */
+body ul > li::marker,
+body ol > li::marker {
+  color: var(--sky) !important;
+}
+
+body li {
+  color: var(--text) !important;
+}
+
+/* Code blocks */
+body pre,
+body code,
+body kbd {
+  font-family: "NotoMono Nerd Font", "Noto Mono", monospace !important;
+}
+body pre,
+body code,
+body kbd {
+  background-color: var(--mantle) !important;
+  color: var(--subtext0) !important;
+  border: 1px solid var(--surface1) !important;
+  border-radius: 6px !important;
+}
+body pre {
+  padding: 1em !important;
+}
+body pre code {
+  border: none !important;
+  background: none !important; /* Optional: also remove background if needed */
+}
+body code,
+body kbd {
+  padding: 1px 2px 0;
+}
+
+/* Blockquotes */
+body blockquote {
+  background-color: var(--base) !important;
+  color: var(--rosewater) !important;
+  border-left: 3px solid var(--lavender) !important;
+  font-family: "NotoSans Nerd Font", "Noto Sans", sans-serif !important;
+  margin-left: 0px !important;
+  padding-left: 20px !important;
+}
+
+/* Tables */
+body table,
+body th,
+body td {
+  border: 1px solid var(--overlay2) !important;
+  border-collapse: collapse !important;
+  border-radius: 3px;
+}
+body table {
+  border: none !important; /* Remove outer border */
+}
+body th,
+body td {
+  padding: 0.5em 1em;
+}
+
+/* Task lists */
+.contains-task-list {
+  list-style-type: none !important; /* hide the bullet points */
+  padding-left: 10px !important;
+}
+
+li.task-list-item > ul.contains-task-list {
+  padding-left: 40px !important; /* indentation for nested lists */
+}
+
+/* checkbox unchecked */
+.task-list-item input[type="checkbox"] {
+  pointer-events: none;
+  margin-right: 0.5em;
+
+  appearance: none; /* Removes the default check and box */
+  -webkit-appearance: none;
+
+  width: 1.2em;
+  height: 1.2em;
+  border: 1px solid var(--red) !important;
+  border-radius: 4px;
+  display: inline-grid;
+  place-content: center;
+  background-color: rgb(var(--red-rgb) / 10%) !important;
+}
+
+.task-list-item input[type="checkbox"]:before {
+  /* hack for check box alignment */
+  content: "✔";
+  color: transparent;
+}
+.task-list-item input[type="checkbox"]:checked:before {
+  content: "✔";
+  color: var(--base) !important;
+}
+
+.task-list-item input[type="checkbox"]:checked {
+  background-color: var(--green) !important;
+  border: 1px solid var(--overlay2) !important;
+}
+
+.task-list-item:has(input:checked) {
+  color: var(--green) !important;
+  text-decoration: none !important;
+}
+
+/* custom tasks */
+.custom-task input[type="checkbox"] {
+  width: 1em;
+  height: 1em;
+  border: none !important;
+  font-size: medium !important;
+  background-color: transparent !important;
+}
+.task-important {
+  color: var(--red) !important;
+}
+.task-important input[type="checkbox"]:before {
+  content: " ";
+  color: var(--red) !important;
+}
+.task-question input[type="checkbox"]:before {
+  content: " ";
+  color: var(--yellow) !important;
+}
+.task-ongoing input[type="checkbox"]:before {
+  content: " ";
+  color: var(--blue) !important;
+}
+
+/* KaTeX */
+.katex {
+  color: var(--text) !important;
+}
+
+/* Callouts */
+.callout {
+  width: auto;
+  border-width: 1px;
+  border-style: solid;
+  border-color: var(--rc-color-dark, var(--rc-color-default));
+}
+
+[data-callout="abstract"],
+[data-callout="summary"],
+[data-callout="tldr"],
+[data-callout="tip"],
+[data-callout="hint"],
+[data-callout="important"] {
+  --rc-color-dark: var(--sapphire);
+}
+
+[data-callout="note"],
+[data-callout="info"],
+[data-callout="todo"] {
+  --rc-color-dark: var(--blue);
+}
+
+[data-callout="success"],
+[data-callout="check"],
+[data-callout="done"] {
+  --rc-color-dark: var(--green);
+}
+
+[data-callout="question"],
+[data-callout="help"],
+[data-callout="faq"] {
+  --rc-color-dark: var(--yellow);
+}
+
+[data-callout="warning"],
+[data-callout="attention"],
+[data-callout="caution"] {
+  --rc-color-dark: var(--peach);
+}
+
+[data-callout="failure"],
+[data-callout="missing"],
+[data-callout="fail"],
+[data-callout="danger"],
+[data-callout="error"],
+[data-callout="bug"] {
+  --rc-color-dark: var(--red);
+}
+
+[data-callout="example"] {
+  --rc-color-dark: var(--mauve);
+}
+
+[data-callout="quote"],
+[data-callout="cite"] {
+  --rc-color-dark: var(--overlay2);
+}

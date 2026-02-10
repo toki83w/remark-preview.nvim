@@ -93,8 +93,7 @@ function M.check()
     local asset_files = {
         "remarkrc.js",
         "export.js",
-        "dark.css",
-        "light.css",
+        "preview.css",
         "print.css",
     }
 

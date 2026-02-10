@@ -32,12 +32,7 @@ const krokiAliases = [
   "wavedrom",
 ];
 
-let themeFile =
-  theme === "light"
-    ? "light.css"
-    : theme === "print"
-      ? "print.css"
-      : "dark.css";
+let themeFile = theme === "print" ? "print.css" : "preview.css";
 
 let cssContent = "";
 try {
@@ -110,24 +105,24 @@ export default {
                 .toc-sidebar {
                     position: fixed; left: calc(-1 * var(--sidebar-width)); top: 0;
                     width: var(--sidebar-width); height: 100vh;
-                    background: ${theme === "dark" ? "#181825" : "#ffffff"};
-                    border-right: 1px solid ${theme === "dark" ? "#313244" : "#d0d7de"};
+                    background: var(--mantle);
+                    border-right: 1px solid var(--surface0);
                     overflow-y: auto; z-index: 1000;
                     transition: left 0.3s; padding: 20px 15px;
                     font-family: "Noto Sans", sans-serif !important;
                 }
                 .toc-sidebar.open { left: 0; }
-                .toc-sidebar h3 { font-size: 1.1em; color: #cba6f7; margin-bottom: 15px; font-weight: 700; }
+                .toc-sidebar h3 { font-size: 1.1em; color: var(--mauve); margin-bottom: 15px; font-weight: 700; }
                 .toc-sidebar a {
                     display: block; padding: 6px 10px; text-decoration: none;
-                    color: #a6adc8; font-size: 0.85em; border-radius: 6px;
+                    color: var(--subtext0); font-size: 0.85em; border-radius: 6px;
                 }
-                .toc-sidebar a.active { background: #89b4fa22; color: #89b4fa; font-weight: 700; }
+                .toc-sidebar a.active { background: rgb(var(--blue-rgb) / 13%); color: var(--blue); font-weight: 700; }
 
                 .toc-toggle {
                     position: fixed; left: 10px; top: 10px; z-index: 1001;
                     font-family: "Noto Sans", sans-serif !important;
-                    background: #cba6f7; color: #11111b;
+                    background: var(--mauve); color: var(--crust);
                     width: 32px; height: 32px; display: flex;
                     align-items: center; justify-content: center; border-radius: 8px;
                 }
