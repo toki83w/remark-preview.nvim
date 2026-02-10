@@ -56,6 +56,7 @@ function M.check()
         "rehype-stringify",
         "remark-cli",
         "remark-flexible-toc",
+        "remark-frontmatter",
         "remark-gfm",
         "remark-kroki",
         "remark-mark-highlight",

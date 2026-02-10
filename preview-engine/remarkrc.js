@@ -10,6 +10,7 @@ import rehypeStringify from "rehype-stringify";
 import rehypeThemeClass from "./rehype-theme-class.js";
 import remarkAmpersandMath from "./remark-ampersand-math.js";
 import remarkFlexibleToc from "remark-flexible-toc";
+import remarkFrontmatter from "remark-frontmatter";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import remarkParse from "remark-parse";
@@ -45,6 +46,13 @@ try {
 
 const plugins = [
   remarkParse,
+  remarkFrontmatter,
+  () => (tree) => {
+    // remove frontmatter nodes
+    tree.children = tree.children.filter(
+      (node) => node.type !== "yaml" && node.type !== "toml",
+    );
+  },
   remarkCustomTasks,
   [remarkGfm, { singleTilde: false }],
   remarkAmpersandMath,

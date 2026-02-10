@@ -15,6 +15,7 @@
     "rehype-stringify": "latest",
     "remark-cli": "latest",
     "remark-flexible-toc": "latest",
+    "remark-frontmatter": "^5.0.0",
     "remark-gfm": "latest",
     "remark-kroki": "latest",
     "remark-mark-highlight": "^0.1.1",
