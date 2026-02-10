@@ -1,4 +1,4 @@
-const puppeteer = require("puppeteer");
+import puppeteer from "puppeteer";
 
 (async () => {
   const htmlPath = process.argv[2];
@@ -23,7 +23,7 @@ const puppeteer = require("puppeteer");
       margin: {
         top: pdfMargin,
         right: pdfMargin,
-        bottom: "1.5cm",
+        bottom: pdfMargin,
         left: pdfMargin,
       },
       displayHeaderFooter: true,

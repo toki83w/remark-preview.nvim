@@ -95,7 +95,7 @@ local function run_remark(input, output, theme_override)
     })
 end
 
-function M.export_pdf()
+function M.export_pdf(open_after)
     local input = vim.fn.expand("%:p")
     local output_pdf = vim.fn.expand("%:p:r") .. ".pdf"
     local temp_html = vim.fs.joinpath(temp_dir, "export_temp.html")
@@ -119,6 +119,10 @@ function M.export_pdf()
             on_exit = function(_, exit_code)
                 if exit_code == 0 then
                     vim.notify("PDF saved: " .. output_pdf)
+                    if open_after then
+                        local opener = is_windows and 'start "" ' or "xdg-open "
+                        vim.fn.jobstart(opener .. vim.fn.shellescape(output_pdf), { detach = true, shell = is_windows })
+                    end
                 else
                     vim.notify("Export failed. Run :RemarkPreviewInstall", vim.log.levels.ERROR)
                 end
@@ -190,7 +194,9 @@ function M.setup(opts)
     vim.api.nvim_create_user_command("RemarkPreviewToggle", M.toggle, {})
     vim.api.nvim_create_user_command("RemarkPreviewRestart", M.restart, {})
     vim.api.nvim_create_user_command("RemarkPreviewInstall", M.install_deps, {})
-    vim.api.nvim_create_user_command("RemarkPreviewExport", M.export_pdf, {})
+    vim.api.nvim_create_user_command("RemarkPreviewExport", function(cmd_opts)
+        M.export_pdf(cmd_opts.args == "open")
+    end, { nargs = "?" })
 
     local missing = check_dependencies()
     if #missing > 0 then
