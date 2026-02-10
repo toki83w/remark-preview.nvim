@@ -43,55 +43,60 @@ try {
 }
 
 
-export default {
-  plugins: [
-    remarkParse,
-    remarkCustomTasks,
-    [remarkGfm, { singleTilde: false }],
-    remarkAmpersandMath,
-    remarkMath,
-    [
-      remarkKroki,
-      {
-        server: "https://kroki.io",
-        output: "img-base64",
-        alias: krokiAliases,
-      },
-    ],
-    remarkMark,
-    remarkSubSuper,
-    [
-      remarkFlexibleToc,
-      {
-        placeholder: "[toc]",
-        containerTag: "nav",
-        containerClassName: "table-of-contents",
-      },
-    ],
-    [remarkRehype, { allowDangerousHtml: true }],
-    [rehypeKrokiImgBg, { aliases: krokiAliases }],
-    rehypeSlug,
-    rehypeAsciimath,
-    rehypeKatex,
-    rehypeHighlight,
-    rehypeCallouts,
-    [
-      rehypeDocument,
-      {
-        head: [
-          {
-            type: "element",
-            tagName: "base",
-            properties: { href: "file://" + docDir + "/" },
-          },
-        ],
-        css: [
-          "https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css",
-          "https://cdn.jsdelivr.net/npm/@catppuccin/highlightjs@1.0.1/css/catppuccin-mocha.css",
-        ],
-        style:
-          cssContent +
-          `
+const plugins = [
+  remarkParse,
+  remarkCustomTasks,
+  [remarkGfm, { singleTilde: false }],
+  remarkAmpersandMath,
+  remarkMath,
+  [
+    remarkKroki,
+    {
+      server: "https://kroki.io",
+      output: "img-base64",
+      alias: krokiAliases,
+    },
+  ],
+  remarkMark,
+  remarkSubSuper,
+  [
+    remarkFlexibleToc,
+    {
+      placeholder: "[toc]",
+      containerTag: "nav",
+      containerClassName: "table-of-contents",
+    },
+  ],
+  [remarkRehype, { allowDangerousHtml: true }],
+  [rehypeKrokiImgBg, { aliases: krokiAliases }],
+  rehypeSlug,
+  rehypeAsciimath,
+  rehypeKatex,
+];
+
+if (theme !== "print") {
+  plugins.push(rehypeHighlight);
+}
+
+plugins.push(
+  rehypeCallouts,
+  [
+    rehypeDocument,
+    {
+      head: [
+        {
+          type: "element",
+          tagName: "base",
+          properties: { href: "file://" + docDir + "/" },
+        },
+      ],
+      css: [
+        "https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css",
+        "https://cdn.jsdelivr.net/npm/@catppuccin/highlightjs@1.0.1/css/catppuccin-mocha.css",
+      ],
+      style:
+        cssContent +
+        `
             html { scroll-behavior: smooth; }
             @media screen {
                 :root { --sidebar-width: 260px; }
@@ -128,7 +133,7 @@ export default {
                 }
             }
         `,
-        script: `
+      script: `
           window.addEventListener('DOMContentLoaded', () => {
               // 1. Sidebar Injection
               const sidebar = document.createElement('div');
@@ -173,17 +178,20 @@ export default {
           });
 
           // 5. Scroll Sync
-          const pid = window.location.pathname.split('_').pop().split('.')[0];
-          setInterval(() => {
-            fetch('scroll_' + pid + '.json').then(r => r.json()).then(d => {
-              const h = document.documentElement.scrollHeight - window.innerHeight;
-              window.scrollTo({ top: d.percent * h, behavior: 'smooth' });
-            }).catch(() => {});
-          }, 100);
+          //const pid = window.location.pathname.split('_').pop().split('.')[0];
+          //setInterval(() => {
+          //  fetch('scroll_' + pid + '.json').then(r => r.json()).then(d => {
+          //    const h = document.documentElement.scrollHeight - window.innerHeight;
+          //    window.scrollTo({ top: d.percent * h, behavior: 'smooth' });
+          //  }).catch(() => {});
+          //}, 100);
         `,
-      },
-    ],
-    [rehypeThemeClass, { theme: theme }],
-    [rehypeStringify, { allowDangerousHtml: true }],
+    },
   ],
+  [rehypeThemeClass, { theme: theme }],
+  [rehypeStringify, { allowDangerousHtml: true }],
+);
+
+export default {
+  plugins: plugins,
 };
