@@ -143,7 +143,7 @@ plugins.push(
         `,
       script: `
           window.addEventListener('DOMContentLoaded', () => {
-              // 1. Sidebar Injection
+              // Sidebar Injection
               const sidebar = document.createElement('div');
               sidebar.className = 'toc-sidebar';
               sidebar.innerHTML = '<h3>Contents</h3><ul id="sb-list"></ul>';
@@ -162,7 +162,7 @@ plugins.push(
                   sbList.appendChild(li);
               });
 
-              // 2. Toggle Button
+              // Toggle Button
               const btn = document.createElement('div');
               btn.className = 'toc-toggle';
               btn.innerHTML = '☰';
@@ -172,7 +172,7 @@ plugins.push(
               };
               document.body.appendChild(btn);
 
-              // 3. Scroll Spy
+              // Scroll Spy
               const observer = new IntersectionObserver((entries) => {
                   entries.forEach(entry => {
                       if (entry.isIntersecting) {
@@ -185,14 +185,18 @@ plugins.push(
               headings.forEach(h => observer.observe(h));
           });
 
-          // 5. Scroll Sync
-          //const pid = window.location.pathname.split('_').pop().split('.')[0];
-          //setInterval(() => {
-          //  fetch('scroll_' + pid + '.json').then(r => r.json()).then(d => {
-          //    const h = document.documentElement.scrollHeight - window.innerHeight;
-          //    window.scrollTo({ top: d.percent * h, behavior: 'smooth' });
-          //  }).catch(() => {});
-          //}, 100);
+          // Scroll Sync
+          const pid = window.location.pathname.split('_').pop().split('.')[0];
+          let lastTs = 0;
+          setInterval(() => {
+            fetch('scroll_' + pid + '.json').then(r => r.json()).then(d => {
+              if (d.ts && d.ts > lastTs) {
+                const h = document.documentElement.scrollHeight - window.innerHeight;
+                window.scrollTo({ top: d.percent * h, behavior: 'smooth' });
+                lastTs = d.ts;
+              }
+            }).catch(() => {});
+          }, 200);
         `,
     },
   ],

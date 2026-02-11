@@ -188,12 +188,29 @@ function M.restart()
     M.toggle()
 end
 
+function M.sync_preview()
+    if not vim.g.markdown_preview_active then
+        return
+    end
+    local _, _, _, scroll_path = get_paths()
+    local f = io.open(scroll_path, "w")
+    if f then
+        local percent = vim.fn.line(".") / vim.fn.line("$")
+        -- Use a timestamp to signal a new "on-demand" sync event
+        f:write(string.format('{"percent": %f, "ts": %d}', percent, os.time()))
+        f:close()
+    end
+end
+
 function M.setup(opts)
     M.config = vim.tbl_deep_extend("force", M.config, opts or {})
+    vim.api.nvim_create_user_command("RemarkPreviewInstall", M.install_deps, {})
     vim.api.nvim_create_user_command("RemarkPreviewOpen", M.open, {})
     vim.api.nvim_create_user_command("RemarkPreviewToggle", M.toggle, {})
     vim.api.nvim_create_user_command("RemarkPreviewRestart", M.restart, {})
-    vim.api.nvim_create_user_command("RemarkPreviewInstall", M.install_deps, {})
+
+    vim.api.nvim_create_user_command("RemarkPreviewSyncPosition", M.sync_preview, {})
+
     vim.api.nvim_create_user_command("RemarkPreviewExport", function(cmd_opts)
         M.export_pdf(cmd_opts.args == "open")
     end, { nargs = "?" })
@@ -206,6 +223,8 @@ function M.setup(opts)
     end
 
     local group = vim.api.nvim_create_augroup("RemarkPreview", { clear = true })
+
+    -- Regenerate preview on save
     vim.api.nvim_create_autocmd("BufWritePost", {
         group = group,
         pattern = "*.md",
@@ -213,20 +232,6 @@ function M.setup(opts)
             if vim.g.markdown_preview_active then
                 local input, output = get_paths()
                 run_remark(input, output)
-            end
-        end,
-    })
-    vim.api.nvim_create_autocmd({ "CursorMoved", "CursorMovedI" }, {
-        group = group,
-        pattern = "*.md",
-        callback = function()
-            if vim.g.markdown_preview_active then
-                local _, _, _, scroll_path = get_paths()
-                local f = io.open(scroll_path, "w")
-                if f then
-                    f:write(string.format('{"percent": %f}', vim.fn.line(".") / vim.fn.line("$")))
-                    f:close()
-                end
             end
         end,
     })
