@@ -204,7 +204,9 @@ end
 
 function M.setup(opts)
     M.config = vim.tbl_deep_extend("force", M.config, opts or {})
-    vim.api.nvim_create_user_command("RemarkPreviewInstall", M.install_deps, {})
+
+    vim.api.nvim_create_user_command("RemarkPreviewInstallDeps", M.install_deps, {})
+
     vim.api.nvim_create_user_command("RemarkPreviewOpen", M.open, {})
     vim.api.nvim_create_user_command("RemarkPreviewToggle", M.toggle, {})
     vim.api.nvim_create_user_command("RemarkPreviewRestart", M.restart, {})
