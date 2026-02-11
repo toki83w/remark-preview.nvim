@@ -14,7 +14,9 @@ import puppeteer from "puppeteer";
     const page = await browser.newPage();
 
     // Load the local temp HTML
-    await page.goto(`file://${htmlPath}`, { waitUntil: "networkidle0" });
+    await page.goto(`file://${htmlPath}`, {
+      waitUntil: ["networkidle2", "load"],
+    });
 
     await page.pdf({
       path: pdfPath,
