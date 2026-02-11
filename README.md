@@ -1,47 +1,45 @@
 # remark-preview.nvim
 
-A high-performance, highly customizable Markdown previewer for Neovim that utilizes the **remark-rehype** ecosystem
-to render GFM-compliant HTML, diagrams, and complex math directly in your browser.
+A high-performance, highly customizable Markdown previewer for Neovim that utilizes the **remark-rehype** ecosystem to render GFM-compliant HTML, diagrams, and complex math directly in your browser.
 
+## 🚀 Features
 
-## Prerequisites
+*   **On-Demand Sync**: Synchronize the browser scroll position to match your Neovim cursor with a single command.
+*   **Extended Math Support**:
+    *   Standard LaTeX via `$...$` and `$$...$$`.
+    *   **Ampersand Math**: Use `&...&` for inline and `&&...&&` for block **AsciiMath** (powered by KaTeX and rehype-asciimath).
+*   **Diagrams (Kroki)**: Native support for Mermaid, PlantUML, Graphviz, and more. Transparent diagrams are automatically wrapped in high-contrast backgrounds for dark mode visibility.
+*   **Advanced Task Lists**:
+    *   Standard GFM `[ ]` and `[x]`.
+    *   **Custom Markers**: Support for `[!]` (Important), `[?]` (Question), and `[>]` (Ongoing) with unique Nerd Font icons.
+*   **Callouts & Alerts**: Support for GitHub-style alerts and Obsidian-style callouts (`[!NOTE]`, `[!WARNING]`, etc.).
+*   **Styling & Themes**:
+    *   Unified **Catppuccin** Mocha (Dark) and Latte (Light) themes.
+    *   Automatic theme switching via configuration.
+    *   Optimized **Print Theme** for B&W paper exports.
+*   **Metadata Awareness**: Automatically ignores YAML/TOML frontmatter during rendering.
+*   **Subscript & Superscript**: Native support for `~sub~` and `^super^` syntax.
+
+## 🛠 Prerequisites
 
 Before installing, ensure you have the following installed on your system:
 
-* **Node.js** (LTS recommended)
-* **npm** (comes bundled with Node.js)
+*   **Node.js** (LTS recommended)
+*   **npm** (bundled with Node.js)
+*   **Nerd Fonts**: Required for viewing custom task icons correctly.
 
-The plugin uses these to run the rendering engine and the local preview server.
-
-
-## Features
-
-* **Auto-Sync**: Real-time scroll following that matches your Neovim cursor.
-* **Math Support**: High-performance LaTeX ($E=mc^2$) and AsciiMath rendering via KaTeX.
-* **Diagrams**: Native support for Mermaid, PlantUML, Graphviz, and more via Kroki integration.
-* **GitHub Alerts**: Support for GitHub-style callouts like `> [!NOTE]` and `> [!WARNING]`.
-* **HTML Support**: Mixed HTML tags within Markdown are preserved and rendered.
-* **PID Isolation**: Run multiple Neovim instances without port or file collisions.
-* **Zero Clutter**: All temporary files are stored in the system's temp directory.
-
-
-## Installation
+## 📦 Installation
 
 ### Using [lazy.nvim](https://github.com/folke/lazy.nvim)
-
-> [!IMPORTANT]
-> This plugin requires Node.js and npm to be available in your system's `$PATH`.
-
-The plugin includes a build hook to automatically manage the necessary NPM dependencies globally.
 
 ```lua
 {
     "toki83w/remark-preview.nvim",
     ft = "markdown",
-    -- Automatically install/update npm dependencies on install or update
-    build = "cd preview-engine && npm install",
+    -- Automatically install/update npm dependencies
+    build = "npm install --prefix preview-engine",
     opts = {
-        theme = "dark", -- options: "dark" (Catppuccin Mocha) or "light" (GitHub)
+        theme = "dark", -- "dark" (Mocha) or "light" (Latte)
         port_base = 8080,
         pdf = {
             format = "A4",
@@ -50,57 +48,57 @@ The plugin includes a build hook to automatically manage the necessary NPM depen
     },
     keys = {
         { "<leader>mp", "<cmd>RemarkPreviewToggle<cr>", desc = "Toggle Remark Preview" },
-        { "<leader>me", "<cmd>RemarkPreviewExport<cr>", desc = "Export markdown to PDF" },
+        { "<leader>ms", "<cmd>RemarkPreviewSyncPosition<cr>", desc = "Sync Preview Position" },
+        { "<leader>me", "<cmd>RemarkPreviewExport open<cr>", desc = "Export & Open PDF" },
     },
 }
 ```
 
+## ⌨️ Commands
 
-## Commands
+*   `:RemarkPreviewToggle`: Starts or stops the live preview server.
+*   `:RemarkPreviewOpen`: Opens the preview in the browser (starts server if inactive).
+*   `:RemarkPreviewSyncPosition`: Manually syncs the browser scroll to the current Neovim line.
+*   `:RemarkPreviewExport [open]`: Exports the current file to PDF using the print theme. Optional `open` argument opens the PDF immediately.
+*   `:RemarkPreviewRestart`: Restarts the preview server.
+*   `:RemarkPreviewInstallDeps`: Triggers the installation of local NPM dependencies.
+*   `:checkhealth remark-preview`: Verifies the installation of binaries and Node packages.
 
-* `:RemarkPreviewToggle`: Starts or stops the live preview server.
-* `:RemarkPreviewInstall`: Manually triggers the installation of global NPM dependencies.
-* `:RemarkPreviewExport`: Export current file to PDF (requires Puppeteer).
-* `:checkhealth remark-preview`: Verifies that all binaries and node packages are correctly installed.
+## 📝 Syntax Examples
 
-
-## Supported Syntax Examples
-
-### Diagrams (Kroki)
-
-```mermaid
-graph TD
-    A[Start] --> B{Working?}
-    B -- Yes --> C[Enjoy]
-    B -- No --> D[Check Health]
+### Ampersand Math (AsciiMath)
+Inline: `&x^2 + y^2 = r^2&`
+Block:
+```text
+&&
+E = mc^2
+&&
 ```
 
-### Math
+### Custom Task Markers
+```markdown
+- [!] This is urgent
+- [?] I have a question about this
+- [>] This task is currently in progress
+- [x] This is already done
+```
 
-* LaTeX: $e^{i\pi} + 1 = 0$
-* AsciiMath: `am x^2 + y^2 = r^2`
+### Sub/Superscript
+Water is H~2~O. The area is 10m^2^.
 
-### Alerts
-
-> [!NOTE] Alerts are rendered with GitHub-compatible styling.
-
-
-## Configuration
-
-You can pass these options into your setup() function:
+## ⚙️ Configuration
 
 ```lua
 require("remark-preview").setup({
-  theme = "dark",       -- Default UI theme: "dark" or "light"
+  theme = "dark",       -- "dark" or "light"
   port_base = 8080,     -- Starting port for the local server
   pdf = {
-    format = "A4",      -- A4, Letter, Legal, etc.
-    margin = "1.5cm"    -- Margin size for exported PDFs
+    format = "A4",
+    margin = "1cm"
   }
 })
 ```
 
-
-## License
+## 📄 License
 
 MIT
