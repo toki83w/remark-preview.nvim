@@ -29,7 +29,7 @@ local server_bin = get_engine_path("node_modules/.bin/live-server")
 local REQUIRED_BINS = { "node", "npm", remark_bin, server_bin }
 
 local function get_paths()
-    local name = vim.fn.expand("%:t:r")
+    local name = vim.fn.expand("%:t:r"):gsub("%s+", "_")
     local pid = vim.fn.getpid()
     local unique_name = string.format("%s_%d", name, pid)
     return vim.fn.expand("%:p"),
@@ -50,7 +50,7 @@ end
 
 function M.install_deps()
     local path = get_engine_path("")
-    local cmd = "cd " .. vim.fn.shellescape(path) .. " && npm install"
+    local cmd = string.format("cd %s && npm install", vim.fn.shellescape(path))
 
     vim.notify("remark-preview: Installing dependencies in " .. path, vim.log.levels.INFO)
 
