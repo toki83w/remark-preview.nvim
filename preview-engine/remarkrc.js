@@ -24,6 +24,7 @@ import { remarkMark } from "remark-mark-highlight";
 const engineDir = process.env.ENGINE_PATH;
 const docDir = process.env.DOC_DIR;
 const theme = process.env.PREVIEW_THEME || "dark";
+const assetsBaseUrl = process.env.ASSETS_BASE_URL || ("file://" + docDir + "/");
 const krokiAliases = [
   "bytefield",
   "graphviz",
@@ -91,13 +92,6 @@ plugins.push(
   [
     rehypeDocument,
     {
-      head: [
-        {
-          type: "element",
-          tagName: "base",
-          properties: { href: "file://" + docDir + "/" },
-        },
-      ],
       css: [
         "https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css",
         "https://cdn.jsdelivr.net/npm/@catppuccin/highlightjs@1.0.1/css/catppuccin-mocha.css",
@@ -201,6 +195,23 @@ plugins.push(
     },
   ],
   [rehypeThemeClass, { theme: theme }],
+  // Inject <base> tag so relative image/link paths resolve against the document directory
+  () => (tree) => {
+    const html = tree.children.find(
+      (n) => n.type === "element" && n.tagName === "html"
+    );
+    const head = html && html.children.find(
+      (n) => n.type === "element" && n.tagName === "head"
+    );
+    if (head) {
+      head.children.unshift({
+        type: "element",
+        tagName: "base",
+        properties: { href: assetsBaseUrl },
+        children: [],
+      });
+    }
+  },
   [rehypeStringify, { allowDangerousHtml: true }],
 );
 

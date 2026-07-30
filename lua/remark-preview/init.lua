@@ -38,6 +38,31 @@ local function get_paths()
         vim.fs.joinpath(temp_dir, "scroll_" .. pid .. ".json")
 end
 
+local function get_assets_symlink_path()
+    local pid = vim.fn.getpid()
+    return vim.fs.joinpath(temp_dir, "remark_assets_" .. pid)
+end
+
+local function create_assets_symlink()
+    local doc_dir = vim.fn.expand("%:p:h")
+    local link_path = get_assets_symlink_path()
+    -- Remove stale symlink if it points somewhere else (e.g. switched document)
+    if vim.fn.isdirectory(link_path) == 1 or vim.fn.filereadable(link_path) == 1 or vim.uv.fs_lstat(link_path) ~= nil then
+        vim.uv.fs_unlink(link_path)
+    end
+    local ok, err = vim.uv.fs_symlink(doc_dir, link_path)
+    if not ok then
+        vim.notify("remark-preview: could not create assets symlink: " .. (err or "unknown error"), vim.log.levels.WARN)
+    end
+end
+
+local function remove_assets_symlink()
+    local link_path = get_assets_symlink_path()
+    if vim.uv.fs_lstat(link_path) ~= nil then
+        vim.uv.fs_unlink(link_path)
+    end
+end
+
 local function check_dependencies()
     local missing = {}
     for _, bin in ipairs(REQUIRED_BINS) do
@@ -58,6 +83,10 @@ function M.install_deps()
     vim.cmd("split | term " .. cmd)
 end
 
+local function compute_port()
+    return M.config.port_base + (vim.fn.getpid() % 1000)
+end
+
 local function run_remark(input, output, theme_override)
     local remark_config = get_engine_path("remarkrc.js")
     local doc_dir = vim.fn.expand("%:p:h")
@@ -71,11 +100,16 @@ local function run_remark(input, output, theme_override)
         vim.fn.shellescape(output)
     )
 
+    local port = compute_port()
+    local assets_symlink_name = "remark_assets_" .. vim.fn.getpid()
+    local assets_base_url = string.format("http://127.0.0.1:%d/%s/", port, assets_symlink_name)
+
     vim.fn.jobstart(cmd, {
         env = {
             PREVIEW_THEME = active_theme,
             ENGINE_PATH = get_engine_path(""),
             DOC_DIR = doc_dir,
+            ASSETS_BASE_URL = assets_base_url,
         },
         on_exit = function(_, exit_code)
             if exit_code ~= 0 then
@@ -131,10 +165,6 @@ function M.export_pdf(open_after)
     end, 1500)
 end
 
-local function compute_port()
-    return M.config.port_base + (vim.fn.getpid() % 1000)
-end
-
 local function start_server(port)
     if not server_job_id then
         server_job_id = vim.fn.jobstart(
@@ -161,11 +191,13 @@ function M.toggle()
     local port = compute_port()
 
     if vim.g.markdown_preview_active then
+        create_assets_symlink()
         start_server(port)
         run_remark(vim.fn.expand("%:p"), output_path)
         open_preview(port, html_filename)
     else
         stop_server()
+        remove_assets_symlink()
     end
 end
 
@@ -233,6 +265,8 @@ function M.setup(opts)
         callback = function()
             if vim.g.markdown_preview_active then
                 local input, output = get_paths()
+                -- Refresh symlink in case we switched to a file in a different directory
+                create_assets_symlink()
                 run_remark(input, output)
             end
         end,
