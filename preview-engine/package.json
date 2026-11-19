@@ -13,6 +13,7 @@
     "@widcardw/rehype-asciimath": "0.0.2",
     "hast-util-to-string": "3.0.1",
     "live-server": "1.2.2",
+    "morphdom": "2.7.8",
     "puppeteer": "24.37.2",
     "rehype-callouts": "2.1.2",
     "rehype-document": "7.0.3",

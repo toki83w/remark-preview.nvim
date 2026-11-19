@@ -1,0 +1,56 @@
+html { scroll-behavior: smooth; }
+@media screen {
+  :root { --sidebar-width: 260px; }
+  body {
+    transition: margin-left 0.3s;
+    margin-left: 45px;
+    font-family: "Noto Sans", sans-serif !important;
+  }
+  body.sidebar-open { margin-left: var(--sidebar-width); }
+
+  .toc-sidebar {
+    position: fixed; left: calc(-1 * var(--sidebar-width)); top: 0;
+    width: var(--sidebar-width); height: 100vh;
+    background: var(--mantle);
+    border-right: 1px solid var(--surface0);
+    overflow-y: auto; z-index: 1000;
+    transition: left 0.3s; padding: 20px 15px;
+    font-family: "Noto Sans", sans-serif !important;
+  }
+  .toc-sidebar.open { left: 0; }
+  .toc-sidebar h3 { font-size: 1.1em; color: var(--mauve); margin-bottom: 15px; font-weight: 700; }
+  .toc-sidebar a {
+    display: block; padding: 6px 10px; text-decoration: none;
+    color: var(--subtext0); font-size: 0.85em; border-radius: 6px;
+  }
+  .toc-sidebar a.active { background: rgb(var(--blue-rgb) / 13%); color: var(--blue); font-weight: 700; }
+
+  .toc-toggle {
+    position: fixed; left: 10px; top: 10px; z-index: 1001;
+    font-family: "Noto Sans", sans-serif !important;
+    background: var(--mauve); color: var(--crust);
+    width: 32px; height: 32px; display: flex;
+    align-items: center; justify-content: center; border-radius: 8px;
+  }
+
+  /* connection indicator (live preview only) */
+  #rp-status {
+    position: fixed; right: 10px; top: 10px; z-index: 1002;
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--overlay0, #888);
+  }
+  #rp-status.connected { background: var(--green, #40a02b); }
+  #rp-status.disconnected { background: var(--red, #d20f39); }
+
+  /* render error banner, shown on top of the last good render */
+  #rp-error {
+    position: fixed; left: 0; right: 0; top: 0; z-index: 1003;
+    padding: 8px 16px 8px 56px;
+    background: var(--red, #d20f39); color: var(--crust, #fff);
+    font: 0.85em/1.4 monospace; white-space: pre-wrap;
+  }
+  #rp-error[hidden] { display: none; }
+}
+@media print {
+  #rp-status, #rp-error { display: none; }
+}
