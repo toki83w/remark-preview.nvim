@@ -1,38 +1,14 @@
-import rehypeAsciimath from "@widcardw/rehype-asciimath";
-import rehypeCallouts from "rehype-callouts";
-import remarkCustomTasks from "./remark-custom-tasks.js";
 import rehypeDocument from "rehype-document";
-import rehypeHighlight from "rehype-highlight";
-import rehypeKatex from "rehype-katex";
-import rehypeKrokiImgBg from "./rehype-kroki-img-bg.js";
-import rehypeSlug from "rehype-slug";
 import rehypeStringify from "rehype-stringify";
 import rehypeThemeClass from "./rehype-theme-class.js";
-import remarkAmpersandMath from "./remark-ampersand-math.js";
-import remarkFlexibleToc from "remark-flexible-toc";
-import remarkFrontmatter from "remark-frontmatter";
-import remarkGfm from "remark-gfm";
-import remarkMath from "remark-math";
-import remarkParse from "remark-parse";
-import remarkRehype from "remark-rehype";
-import remarkSubSuper from "./remark-sub-super.js";
+import { bodyPlugins } from "./pipeline.js";
 import { join } from "node:path";
 import { readFileSync } from "node:fs";
-import { remarkKroki } from "remark-kroki";
-import { remarkMark } from "remark-mark-highlight";
 
 const engineDir = process.env.ENGINE_PATH;
 const docDir = process.env.DOC_DIR;
 const theme = process.env.PREVIEW_THEME || "dark";
 const assetsBaseUrl = process.env.ASSETS_BASE_URL || ("file://" + docDir + "/");
-const krokiAliases = [
-  "bytefield",
-  "graphviz",
-  "mermaid",
-  "plantuml",
-  "svgbob",
-  "wavedrom",
-];
 
 let themeFile = theme === "print" ? "print.css" : "preview.css";
 
@@ -45,50 +21,9 @@ try {
 }
 
 
-const plugins = [
-  remarkParse,
-  remarkFrontmatter,
-  () => (tree) => {
-    // remove frontmatter nodes
-    tree.children = tree.children.filter(
-      (node) => node.type !== "yaml" && node.type !== "toml",
-    );
-  },
-  remarkCustomTasks,
-  [remarkGfm, { singleTilde: false }],
-  remarkAmpersandMath,
-  remarkMath,
-  [
-    remarkKroki,
-    {
-      server: "https://kroki.io",
-      output: "img-base64",
-      alias: krokiAliases,
-    },
-  ],
-  remarkMark,
-  remarkSubSuper,
-  [
-    remarkFlexibleToc,
-    {
-      placeholder: "[toc]",
-      containerTag: "nav",
-      containerClassName: "table-of-contents",
-    },
-  ],
-  [remarkRehype, { allowDangerousHtml: true }],
-  [rehypeKrokiImgBg, { aliases: krokiAliases }],
-  rehypeSlug,
-  rehypeAsciimath,
-  rehypeKatex,
-];
-
-if (theme !== "print") {
-  plugins.push(rehypeHighlight);
-}
+const plugins = bodyPlugins({ theme });
 
 plugins.push(
-  rehypeCallouts,
   [
     rehypeDocument,
     {
