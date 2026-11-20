@@ -1,7 +1,9 @@
 import { visit } from "unist-util-visit";
 
 // adds a white background to the img with alt property equal to a diagram name,
-// to improve the visibility of transparent diagrams (mermaid) in the dark theme
+// to improve the visibility of transparent diagrams (mermaid) in the dark theme.
+// The wrapper is an inline-block span: a div is not allowed inside the paragraph holding the
+// image, and the browser would then split the paragraph and leave it empty.
 export default function rehypeKrokiImgBg(options = {}) {
   if (!options || !Array.isArray(options.aliases)) {
     throw new Error(
@@ -20,7 +22,7 @@ export default function rehypeKrokiImgBg(options = {}) {
       ) {
         parent.children.splice(index, 1, {
           type: "element",
-          tagName: "div",
+          tagName: "span",
           properties: {
             style:
               "background:#fff;padding:8px;display:inline-block;border-radius:6px;",

@@ -8,6 +8,11 @@ M.defaults = {
     -- A document's project root is its nearest ancestor containing one of these (else its own
     -- directory). Images and linked files are only served from inside it.
     root_markers = { ".obsidian", ".git" },
+    kroki = {
+        -- Diagrams (mermaid, plantuml, graphviz, ...) are drawn by a Kroki server. The source of every
+        -- diagram is sent to it: point this at a self-hosted instance to keep your documents private.
+        server = "https://kroki.io",
+    },
     pdf = {
         format = "A4",
         margin = "1cm",
@@ -49,6 +54,17 @@ function M.setup(opts)
     end
 
     merged.sync_on_cursor = merged.sync_on_cursor == true
+
+    local kroki_server = type(merged.kroki) == "table" and merged.kroki.server or nil
+    if type(kroki_server) ~= "string" or not kroki_server:match("^https?://[^%s]+$") then
+        vim.schedule(function()
+            vim.notify(
+                "remark-preview: `kroki.server` must be an http(s) URL, using " .. M.defaults.kroki.server,
+                vim.log.levels.WARN
+            )
+        end)
+        merged.kroki = vim.deepcopy(M.defaults.kroki)
+    end
 
     -- a list given by the user replaces the default instead of being merged index by index
     if opts.root_markers ~= nil then

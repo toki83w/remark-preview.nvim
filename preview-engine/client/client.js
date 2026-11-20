@@ -60,14 +60,21 @@
   }
 
   // ---------------------------------------------------------------- updates
-  function showError(message) {
+  // A banner on top of the page: an error (the render failed, the last good one is shown) or a
+  // warning (the render worked but, for example, a diagram could not be drawn).
+  function showBanner(message, isWarning) {
     errorBox.textContent = message;
+    errorBox.className = isWarning ? "warning" : "";
     errorBox.hidden = false;
   }
 
-  function hideError() {
+  function hideBanner() {
     errorBox.hidden = true;
     errorBox.textContent = "";
+  }
+
+  function showError(message) {
+    showBanner(message, false);
   }
 
   // Swaps the rendered body in place: morphdom only touches what changed, so
@@ -81,7 +88,11 @@
     if (data.title) document.title = data.title;
     version = data.version;
     buildSidebar();
-    hideError();
+    if (data.warnings && data.warnings.length > 0) {
+      showBanner(data.warnings.join("\n"), true);
+    } else {
+      hideBanner();
+    }
     window.scrollTo({ left: x, top: y, behavior: "instant" });
   }
 

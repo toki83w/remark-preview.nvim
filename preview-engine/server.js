@@ -16,7 +16,8 @@
 //   {"type":"error","path":"/abs/file.md","message":"..."}
 //   {"type":"fatal","message":"..."}   (startup failure, followed by exit code 1)
 // Environment: PREVIEW_THEME (default "dark"), PREVIEW_PORT (default: any free port),
-// PREVIEW_ROOT_MARKERS (JSON list of files/directories marking a project root, default [".obsidian", ".git"]).
+// PREVIEW_ROOT_MARKERS (JSON list of files/directories marking a project root, default [".obsidian", ".git"]),
+// PREVIEW_KROKI_SERVER (Kroki server drawing the diagrams, default https://kroki.io).
 // The process exits when stdin is closed (e.g. Neovim died).
 import { createInterface } from "node:readline";
 import { createPreviewServer } from "./preview-server.js";
@@ -33,6 +34,7 @@ function rootMarkersFromEnv() {
 const app = createPreviewServer({
   theme: process.env.PREVIEW_THEME || "dark",
   rootMarkers: rootMarkersFromEnv(),
+  kroki: process.env.PREVIEW_KROKI_SERVER ? { server: process.env.PREVIEW_KROKI_SERVER } : undefined,
 });
 
 function emit(message) {

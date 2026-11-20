@@ -224,6 +224,16 @@ tests["without a matching marker the document directory is the root"] = function
     assert(not page:find("/f/shared.png", 1, true))
 end
 
+tests["kroki.server from the configuration reaches the server and failures are shown"] = function()
+    local dir = H.tmpdir()
+    H.write(dir .. "/d.md", { "# Diagram", "", "```mermaid", "graph TD; A-->B", "```" })
+    -- nothing listens on port 1: the diagram cannot be drawn, which must be reported, not hidden
+    config.setup({ kroki = { server = "http://127.0.0.1:1" } })
+    local page = page_of(dir .. "/d.md", dir)
+    assert(page:find('class="warning"', 1, true), "a failing diagram must show the warning banner")
+    assert(page:find("cannot reach the Kroki server", 1, true), "the reason must be shown")
+end
+
 tests["the server does not outlive a killed Neovim"] = function()
     local dir = H.tmpdir()
     H.write(dir .. "/o.md", { "# Orphan" })

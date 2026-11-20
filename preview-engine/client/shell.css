@@ -50,6 +50,7 @@ html { scroll-behavior: smooth; }
     font: 0.85em/1.4 monospace; white-space: pre-wrap;
   }
   #rp-error[hidden] { display: none; }
+  #rp-error.warning { background: var(--yellow, #df8e1d); }
 
   /* references the preview refuses to serve or cannot find */
   img.rp-blocked, img.rp-missing {

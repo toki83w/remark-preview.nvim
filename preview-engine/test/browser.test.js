@@ -3,6 +3,7 @@ import { rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { test } from "node:test";
 import { createPreviewServer } from "../preview-server.js";
+import { createKrokiCache } from "../remark-kroki-cache.js";
 import { makeProject, tempDir } from "./helpers.js";
 
 // Real-browser check of the live swap. Skipped when Chrome is not available.
@@ -196,5 +197,54 @@ test("images load, anchors scroll in place and links open the other preview", { 
     await browser.close();
     await app.shutdown();
     project.cleanup();
+  }
+});
+
+test("a diagram has a real height inside its stamped paragraph, and warnings show as a banner", { timeout: 90000 }, async (t) => {
+  const browser = await launch();
+  if (!browser) {
+    t.skip("Chrome/puppeteer not available");
+    return;
+  }
+
+  const tmp = tempDir();
+  const doc = join(tmp.dir, "diagram.md");
+  writeFileSync(doc, "# Diagram\n\n```mermaid\ngraph TD; A-->B\n```\n\nafter\n");
+  let fail = false;
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="120"><rect width="200" height="120"/></svg>';
+  const fakeFetch = async () => (fail ? new Response("boom", { status: 500 }) : new Response(svg, { status: 200 }));
+  const app = createPreviewServer({ kroki: { fetch: fakeFetch, cache: createKrokiCache() } });
+  await app.listen(0);
+
+  try {
+    const info = await app.open(doc);
+    const page = await browser.newPage();
+    await page.setRequestInterception(true);
+    page.on("request", (req) => (new URL(req.url()).hostname === "127.0.0.1" ? req.continue() : req.abort()));
+    await page.goto(info.url, { waitUntil: "load" });
+    await page.waitForFunction(() => document.getElementById("rp-status").className === "connected");
+
+    // the paragraph that carries the source lines is as tall as the diagram, so scroll sync can use it
+    const height = await page.evaluate(() => document.querySelector("#content p[data-line='3']").getBoundingClientRect().height);
+    assert.ok(height >= 120, `stamped paragraph is only ${height}px high`);
+    assert.equal(await page.evaluate(() => document.getElementById("rp-error").hidden), true);
+
+    // a failing diagram turns into a warning banner while the document keeps updating
+    fail = true;
+    writeFileSync(doc, "# Diagram\n\n```mermaid\ngraph TD; A-->C\n```\n\nchanged text\n");
+    await app.update(doc);
+    await page.waitForFunction(() => !document.getElementById("rp-error").hidden);
+    assert.equal(await page.evaluate(() => document.getElementById("rp-error").className), "warning");
+    assert.match(await page.evaluate(() => document.getElementById("rp-error").textContent), /Diagram "mermaid" \(line 3\)/);
+    assert.match(await page.evaluate(() => document.getElementById("content").textContent), /changed text/);
+
+    // fixed: the banner disappears on the next save
+    fail = false;
+    await app.update(doc);
+    await page.waitForFunction(() => document.getElementById("rp-error").hidden);
+  } finally {
+    await browser.close();
+    await app.shutdown();
+    tmp.cleanup();
   }
 });

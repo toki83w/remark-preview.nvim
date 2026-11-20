@@ -94,7 +94,13 @@ export function createPreviewServer(options = {}) {
   }
 
   function updatePayload(session) {
-    return { version: session.version, html: session.html, title: session.title, headings: session.headings };
+    return {
+      version: session.version,
+      html: session.html,
+      title: session.title,
+      headings: session.headings,
+      warnings: session.warnings,
+    };
   }
 
   // Where the URLs of a document may point, and how they are rewritten.
@@ -122,6 +128,7 @@ export function createPreviewServer(options = {}) {
         const result = await render(text, { theme: session.theme, path: session.path, kroki, links });
         session.html = result.html;
         session.headings = result.headings;
+        session.warnings = result.warnings;
         session.title = result.title || basename(session.path);
         session.version += 1;
         session.error = null;
@@ -151,6 +158,7 @@ export function createPreviewServer(options = {}) {
         theme,
         html: "",
         headings: [],
+        warnings: [],
         title: basename(abs),
         version: 0,
         error: null,
@@ -296,6 +304,7 @@ export function createPreviewServer(options = {}) {
       html: session.html,
       version: session.version,
       error: session.error,
+      warnings: session.warnings,
     });
     return reply(res, 200, req.method === "HEAD" ? "" : page, { "Content-Type": "text/html; charset=utf-8" });
   }

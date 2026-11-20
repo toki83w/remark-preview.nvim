@@ -13,11 +13,11 @@ import remarkCustomTasks from "./remark-custom-tasks.js";
 import remarkFlexibleToc from "remark-flexible-toc";
 import remarkFrontmatter from "remark-frontmatter";
 import remarkGfm from "remark-gfm";
+import remarkKrokiCache from "./remark-kroki-cache.js";
 import remarkMath from "remark-math";
 import remarkParse from "remark-parse";
 import remarkRehype from "remark-rehype";
 import remarkSubSuper from "./remark-sub-super.js";
-import { remarkKroki } from "remark-kroki";
 import { remarkMark } from "remark-mark-highlight";
 import { toString } from "hast-util-to-string";
 import { unified } from "unified";
@@ -27,6 +27,10 @@ import { VFile } from "vfile";
 export const KROKI_ALIASES = ["bytefield", "graphviz", "mermaid", "plantuml", "svgbob", "wavedrom"];
 
 export const DEFAULT_KROKI_SERVER = "https://kroki.io";
+
+// Options of the diagram plugin when the caller gives none. One shared object: processors are
+// cached by the identity of this object.
+const DEFAULT_KROKI = Object.freeze({});
 
 // Drops the YAML/TOML frontmatter nodes from the tree.
 function removeFrontmatter() {
@@ -65,14 +69,7 @@ export function bodyPlugins({ theme = "dark", kroki = {} } = {}) {
   const plugins = [remarkParse, remarkFrontmatter, removeFrontmatter, remarkCustomTasks, [remarkGfm, { singleTilde: false }]];
   plugins.push(remarkAmpersandMath, remarkMath);
   if (kroki) {
-    plugins.push([
-      remarkKroki,
-      {
-        server: kroki.server || DEFAULT_KROKI_SERVER,
-        output: "img-base64",
-        alias: KROKI_ALIASES,
-      },
-    ]);
+    plugins.push([remarkKrokiCache, { ...kroki, server: kroki.server || DEFAULT_KROKI_SERVER, alias: KROKI_ALIASES }]);
   }
   plugins.push(remarkMark, remarkSubSuper);
   plugins.push([
@@ -98,11 +95,16 @@ function use(processor, entry) {
   return Array.isArray(entry) ? processor.use(...entry) : processor.use(entry);
 }
 
+// theme -> (kroki options object, or false for "no diagrams") -> processor.
+// The options object is the key by identity, so callers must reuse it between renders.
 const processors = new Map();
 
 function getProcessor(theme, kroki) {
-  const key = JSON.stringify([theme, kroki]);
-  let processor = processors.get(key);
+  if (!processors.has(theme)) {
+    processors.set(theme, { off: null, byOptions: new WeakMap() });
+  }
+  const slot = processors.get(theme);
+  let processor = kroki ? slot.byOptions.get(kroki) : slot.off;
   if (!processor) {
     processor = unified();
     for (const entry of bodyPlugins({ theme, kroki })) {
@@ -110,7 +112,11 @@ function getProcessor(theme, kroki) {
     }
     processor.use(rehypeStringify, { allowDangerousHtml: true });
     processor.freeze();
-    processors.set(key, processor);
+    if (kroki) {
+      slot.byOptions.set(kroki, processor);
+    } else {
+      slot.off = processor;
+    }
   }
   return processor;
 }
@@ -121,16 +127,20 @@ function getProcessor(theme, kroki) {
  * @param {string} text markdown source
  * @param {{ theme?: string, path?: string, kroki?: { server?: string } | false, links?: object }} ctx
  *   links: { root, docDir, assetBase, docLink } makes local URLs work in the preview (see links.js)
- * @returns {Promise<{ html: string, headings: Array<{depth: number, id: string, text: string}>, title: string }>}
+ * @returns {Promise<{ html: string, headings: Array<{depth: number, id: string, text: string}>, title: string, warnings: string[] }>}
+ *   warnings: problems that did not stop the rendering (a diagram that could not be drawn, ...)
  */
 export async function render(text, ctx = {}) {
   const theme = ctx.theme || "dark";
-  const kroki = ctx.kroki === undefined ? {} : ctx.kroki;
+  const kroki = ctx.kroki === undefined ? DEFAULT_KROKI : ctx.kroki;
   const processor = getProcessor(theme, kroki);
   const file = await processor.process(new VFile({ value: text, path: ctx.path, data: { links: ctx.links } }));
   return {
     html: String(file),
     headings: file.data.headings || [],
     title: file.data.title || "",
+    warnings: (file.data.krokiErrors || []).map(
+      (e) => `Diagram "${e.type}"${e.line ? ` (line ${e.line})` : ""}: ${e.message}`,
+    ),
   };
 }

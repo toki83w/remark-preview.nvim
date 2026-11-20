@@ -37,10 +37,14 @@ export function escapeHtml(value) {
  * The live preview page. The body is a fragment produced by pipeline.js;
  * the client swaps it in place when the server pushes an update.
  *
- * @param {{ id: string, theme: string, title: string, html: string, version: number, error?: string|null }} page
+ * @param {{ id: string, theme: string, title: string, html: string, version: number,
+ *   error?: string|null, warnings?: string[] }} page
+ *   error: the last render failed; warnings: the render worked but something is wrong (a diagram)
  */
-export function renderShell({ id, theme, title, html, version, error = null }) {
+export function renderShell({ id, theme, title, html, version, error = null, warnings = [] }) {
   const cls = escapeHtml(theme);
+  // an error wins over warnings: the content shown is then the last good render
+  const banner = error ? { text: error, warning: false } : { text: warnings.join("\n"), warning: true };
   const links = CSS_LINKS.map((href) => `<link rel="stylesheet" href="${href}">`).join("\n");
   return `<!doctype html>
 <html lang="en" class="${cls}">
@@ -55,7 +59,7 @@ ${loadCss(theme)}
 </head>
 <body class="${cls}">
 <span id="rp-status" title="connecting"></span>
-<div id="rp-error"${error ? "" : " hidden"}>${error ? escapeHtml(error) : ""}</div>
+<div id="rp-error"${banner.text ? "" : " hidden"}${banner.warning ? ' class="warning"' : ""}>${escapeHtml(banner.text)}</div>
 <div id="content">
 ${html}
 </div>

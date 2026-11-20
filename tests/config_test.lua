@@ -63,6 +63,22 @@ tests["sync_on_cursor is off by default and only true turns it on"] = function()
     assert(config.setup({ sync_on_cursor = "yes" }).sync_on_cursor == false)
 end
 
+tests["kroki.server defaults to kroki.io and can be pointed at a self-hosted instance"] = function()
+    assert(config.setup(nil).kroki.server == "https://kroki.io")
+    assert(config.setup({ kroki = { server = "http://localhost:8000/" } }).kroki.server == "http://localhost:8000/")
+end
+
+tests["an invalid kroki.server falls back to the default with a warning"] = function()
+    local messages = H.capture_notify()
+    assert(config.setup({ kroki = { server = "ftp://nope" } }).kroki.server == "https://kroki.io")
+    assert(config.setup({ kroki = { server = 42 } }).kroki.server == "https://kroki.io")
+    assert(config.setup({ kroki = "https://kroki.io" }).kroki.server == "https://kroki.io")
+    H.wait(function()
+        return #messages >= 3
+    end, 1000)
+    assert(messages[1].msg:find("kroki.server", 1, true))
+end
+
 tests["root_markers replaces the default list instead of merging into it"] = function()
     assert(vim.deep_equal(config.setup(nil).root_markers, { ".obsidian", ".git" }))
     assert(vim.deep_equal(config.setup({ root_markers = { ".root" } }).root_markers, { ".root" }))
