@@ -12,6 +12,8 @@
 //   {"type":"updated","path":"/abs/file.md","version":2}
 //   {"type":"closed","path":"/abs/file.md"}
 //   {"type":"error","path":"/abs/file.md","message":"..."}
+//   {"type":"fatal","message":"..."}   (startup failure, followed by exit code 1)
+// Environment: PREVIEW_THEME (default "dark"), PREVIEW_PORT (default: any free port).
 // The process exits when stdin is closed (e.g. Neovim died).
 import { createInterface } from "node:readline";
 import { createPreviewServer } from "./preview-server.js";
@@ -53,7 +55,14 @@ async function dispatch(message) {
   }
 }
 
-const port = await app.listen(0);
+// PREVIEW_PORT forces a port; the default 0 lets the OS pick a free one.
+let port;
+try {
+  port = await app.listen(Number(process.env.PREVIEW_PORT) || 0);
+} catch (e) {
+  emit({ type: "fatal", message: `Cannot listen: ${e.message}` });
+  process.exit(1);
+}
 emit({ type: "ready", port, token: app.token });
 
 const lines = createInterface({ input: process.stdin });

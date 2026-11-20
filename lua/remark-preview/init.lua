@@ -1,247 +1,62 @@
+local config = require("remark-preview.config")
+local export = require("remark-preview.export")
+local server = require("remark-preview.server")
+local session = require("remark-preview.session")
+local util = require("remark-preview.util")
+
 local M = {}
 
-local server_job_id = nil
-local is_windows = vim.fn.has("win32") == 1 or vim.fn.has("win64") == 1
-local temp_dir = is_windows and os.getenv("TEMP") or (os.getenv("TMPDIR") or "/tmp")
-
-M.config = {
-    theme = "dark",
-    port_base = 8080,
-    pdf = {
-        format = "A4",
-        margin = "1cm",
-    },
-}
-
--- Helper to get the absolute path to the plugin root
-local function get_plugin_path()
-    -- Gets the root path of the plugin
-    return vim.fn.fnamemodify(debug.getinfo(1).source:sub(2), ":h:h:h")
-end
-
-local function get_engine_path(file)
-    return vim.fs.joinpath(get_plugin_path(), "preview-engine", file)
-end
-
-local remark_bin = get_engine_path("node_modules/.bin/remark")
-local server_bin = get_engine_path("node_modules/.bin/live-server")
-
-local REQUIRED_BINS = { "node", "npm", remark_bin, server_bin }
-
-local function get_paths()
-    local name = vim.fn.expand("%:t:r"):gsub("%s+", "_")
-    local pid = vim.fn.getpid()
-    local unique_name = string.format("%s_%d", name, pid)
-    return vim.fn.expand("%:p"),
-        vim.fs.joinpath(temp_dir, unique_name .. ".html"),
-        unique_name .. ".html",
-        vim.fs.joinpath(temp_dir, "scroll_" .. pid .. ".json")
-end
-
-local function get_assets_symlink_path()
-    local pid = vim.fn.getpid()
-    return vim.fs.joinpath(temp_dir, "remark_assets_" .. pid)
-end
-
-local function create_assets_symlink()
-    local doc_dir = vim.fn.expand("%:p:h")
-    local link_path = get_assets_symlink_path()
-    -- Remove stale symlink if it points somewhere else (e.g. switched document)
-    if vim.fn.isdirectory(link_path) == 1 or vim.fn.filereadable(link_path) == 1 or vim.uv.fs_lstat(link_path) ~= nil then
-        vim.uv.fs_unlink(link_path)
-    end
-    local ok, err = vim.uv.fs_symlink(doc_dir, link_path)
-    if not ok then
-        vim.notify("remark-preview: could not create assets symlink: " .. (err or "unknown error"), vim.log.levels.WARN)
-    end
-end
-
-local function remove_assets_symlink()
-    local link_path = get_assets_symlink_path()
-    if vim.uv.fs_lstat(link_path) ~= nil then
-        vim.uv.fs_unlink(link_path)
-    end
-end
-
-local function check_dependencies()
-    local missing = {}
-    for _, bin in ipairs(REQUIRED_BINS) do
-        if vim.fn.executable(bin) ~= 1 then
-            table.insert(missing, bin)
-        end
-    end
-    return missing
-end
+M.config = config.options
 
 function M.install_deps()
-    local path = get_engine_path("")
+    local path = util.engine_path("")
     local cmd = string.format("cd %s && npm install", vim.fn.shellescape(path))
 
-    vim.notify("remark-preview: Installing dependencies in " .. path, vim.log.levels.INFO)
+    util.notify("installing dependencies in " .. path)
 
     -- Run in a terminal split so the user can see progress
     vim.cmd("split | term " .. cmd)
 end
 
-local function compute_port()
-    return M.config.port_base + (vim.fn.getpid() % 1000)
-end
-
-local function run_remark(input, output, theme_override)
-    local remark_config = get_engine_path("remarkrc.js")
-    local doc_dir = vim.fn.expand("%:p:h")
-    local active_theme = theme_override or M.config.theme
-
-    local cmd = string.format(
-        "%s %s --rc-path %s --output %s",
-        remark_bin,
-        vim.fn.shellescape(input),
-        vim.fn.shellescape(remark_config),
-        vim.fn.shellescape(output)
-    )
-
-    local port = compute_port()
-    local assets_symlink_name = "remark_assets_" .. vim.fn.getpid()
-    local assets_base_url = string.format("http://127.0.0.1:%d/%s/", port, assets_symlink_name)
-
-    vim.fn.jobstart(cmd, {
-        env = {
-            PREVIEW_THEME = active_theme,
-            ENGINE_PATH = get_engine_path(""),
-            DOC_DIR = doc_dir,
-            ASSETS_BASE_URL = assets_base_url,
-        },
-        on_exit = function(_, exit_code)
-            if exit_code ~= 0 then
-                local f = io.open(output, "w")
-                if f then
-                    local error_html = string.format(
-                        [[
-<!DOCTYPE html><html><head><style>body{font-family:sans-serif;background:#1e1e2e;color:#f38ba8;padding:50px;}.box{border:2px solid #f38ba8;padding:20px;background:#181825;}</style></head>
-<body><div class="box"><h1>⚠️ Rendering Error</h1><p>Check syntax or Kroki connection.</p><p>Exit Code: %d</p></div></body></html>]],
-                        exit_code
-                    )
-                    f:write(error_html)
-                    f:close()
-                end
-            end
-        end,
-    })
-end
-
-function M.export_pdf(open_after)
-    local input = vim.fn.expand("%:p")
-    local output_pdf = vim.fn.expand("%:p:r") .. ".pdf"
-    local temp_html = vim.fs.joinpath(temp_dir, "export_temp.html")
-    local export_script = get_engine_path("export.js")
-
-    vim.notify("Exporting to PDF (Print Theme)...", vim.log.levels.INFO)
-    run_remark(input, temp_html, "print")
-
-    vim.defer_fn(function()
-        local cmd = string.format(
-            "node %s %s %s",
-            vim.fn.shellescape(export_script),
-            vim.fn.shellescape(temp_html),
-            vim.fn.shellescape(output_pdf)
-        )
-        vim.fn.jobstart(cmd, {
-            env = {
-                PDF_FORMAT = M.config.pdf.format,
-                PDF_MARGIN = M.config.pdf.margin,
-            },
-            on_exit = function(_, exit_code)
-                if exit_code == 0 then
-                    vim.notify("PDF saved: " .. output_pdf)
-                    if open_after then
-                        local opener = is_windows and 'start "" ' or "xdg-open "
-                        vim.fn.jobstart(opener .. vim.fn.shellescape(output_pdf), { detach = true, shell = is_windows })
-                    end
-                else
-                    vim.notify("Export failed. Run :RemarkPreviewInstall", vim.log.levels.ERROR)
-                end
-            end,
-        })
-    end, 1500)
-end
-
-local function start_server(port)
-    if not server_job_id then
-        server_job_id = vim.fn.jobstart(
-            string.format("%s %s --port=%d --no-browser", server_bin, vim.fn.shellescape(temp_dir), port)
-        )
-    end
-end
-
-local function stop_server()
-    if server_job_id then
-        vim.fn.jobstop(server_job_id)
-        server_job_id = nil
-    end
-end
-
-local function open_preview(port, html_filename)
-    local opener = is_windows and 'start "" ' or "xdg-open "
-    vim.fn.jobstart(opener .. string.format("http://127.0.0.1:%d/%s", port, html_filename), { shell = is_windows })
-end
-
+-- Each of these acts on the current buffer.
 function M.toggle()
-    vim.g.markdown_preview_active = not vim.g.markdown_preview_active
-    local _, output_path, html_filename, _ = get_paths()
-    local port = compute_port()
-
-    if vim.g.markdown_preview_active then
-        create_assets_symlink()
-        start_server(port)
-        run_remark(vim.fn.expand("%:p"), output_path)
-        open_preview(port, html_filename)
-    else
-        stop_server()
-        remove_assets_symlink()
-    end
+    session.toggle(vim.api.nvim_get_current_buf())
 end
 
 function M.open()
-    if not vim.g.markdown_preview_active then
-        M.toggle()
-        return
-    end
-
-    local _, _, html_filename, _ = get_paths()
-    local port = compute_port()
-
-    open_preview(port, html_filename)
+    session.start(vim.api.nvim_get_current_buf())
 end
 
 function M.restart()
-    if vim.g.markdown_preview_active then
-        M.toggle()
-    end
-    M.toggle()
+    session.restart()
+end
+
+function M.stop_all()
+    session.stop_all()
 end
 
 function M.sync_preview()
-    if not vim.g.markdown_preview_active then
-        return
-    end
-    local _, _, _, scroll_path = get_paths()
-    local f = io.open(scroll_path, "w")
-    if f then
-        local percent = vim.fn.line(".") / vim.fn.line("$")
-        -- Use a timestamp to signal a new "on-demand" sync event
-        f:write(string.format('{"percent": %f, "ts": %d}', percent, os.time()))
-        f:close()
-    end
+    session.sync(vim.api.nvim_get_current_buf())
+end
+
+function M.export_pdf(open_after)
+    export.export_pdf(vim.api.nvim_get_current_buf(), open_after)
 end
 
 function M.setup(opts)
-    M.config = vim.tbl_deep_extend("force", M.config, opts or {})
+    M.config = config.setup(opts)
+
+    if vim.fn.has("nvim-0.10") ~= 1 then
+        util.notify("Neovim 0.10 or newer is required", vim.log.levels.ERROR)
+        return
+    end
 
     vim.api.nvim_create_user_command("RemarkPreviewInstallDeps", M.install_deps, {})
 
     vim.api.nvim_create_user_command("RemarkPreviewOpen", M.open, {})
     vim.api.nvim_create_user_command("RemarkPreviewToggle", M.toggle, {})
     vim.api.nvim_create_user_command("RemarkPreviewRestart", M.restart, {})
+    vim.api.nvim_create_user_command("RemarkPreviewStopAll", M.stop_all, {})
 
     vim.api.nvim_create_user_command("RemarkPreviewSyncPosition", M.sync_preview, {})
 
@@ -249,26 +64,19 @@ function M.setup(opts)
         M.export_pdf(cmd_opts.args == "open")
     end, { nargs = "?" })
 
-    local missing = check_dependencies()
-    if #missing > 0 then
+    local problems = server.check()
+    if #problems > 0 then
         vim.schedule(function()
-            vim.notify("remark-preview: Missing deps. Run :RemarkPreviewInstall", vim.log.levels.WARN)
+            util.notify(table.concat(problems, "; "), vim.log.levels.WARN)
         end)
     end
 
+    -- The server also exits by itself when Neovim goes away; this just makes it prompt.
     local group = vim.api.nvim_create_augroup("RemarkPreview", { clear = true })
-
-    -- Regenerate preview on save
-    vim.api.nvim_create_autocmd("BufWritePost", {
+    vim.api.nvim_create_autocmd("VimLeavePre", {
         group = group,
-        pattern = "*.md",
         callback = function()
-            if vim.g.markdown_preview_active then
-                local input, output = get_paths()
-                -- Refresh symlink in case we switched to a file in a different directory
-                create_assets_symlink()
-                run_remark(input, output)
-            end
+            session.stop_all()
         end,
     })
 end
