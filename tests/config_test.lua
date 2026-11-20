@@ -57,4 +57,19 @@ tests["an invalid port falls back to 0 with a warning"] = function()
     end, 1000)
 end
 
+tests["root_markers replaces the default list instead of merging into it"] = function()
+    assert(vim.deep_equal(config.setup(nil).root_markers, { ".obsidian", ".git" }))
+    assert(vim.deep_equal(config.setup({ root_markers = { ".root" } }).root_markers, { ".root" }))
+end
+
+tests["invalid root_markers fall back to the defaults with a warning"] = function()
+    local messages = H.capture_notify()
+    local options = config.setup({ root_markers = { 1, "" } })
+    assert(vim.deep_equal(options.root_markers, { ".obsidian", ".git" }))
+    H.wait(function()
+        return #messages > 0
+    end, 1000)
+    assert(messages[1].msg:find("root_markers", 1, true))
+end
+
 return tests

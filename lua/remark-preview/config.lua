@@ -4,6 +4,9 @@ M.defaults = {
     theme = "dark", -- "dark" (Mocha) or "light" (Latte)
     port = 0, -- 0 lets the OS choose a free port for the preview server
     debug = false, -- print debug messages
+    -- A document's project root is its nearest ancestor containing one of these (else its own
+    -- directory). Images and linked files are only served from inside it.
+    root_markers = { ".obsidian", ".git" },
     pdf = {
         format = "A4",
         margin = "1cm",
@@ -42,6 +45,21 @@ function M.setup(opts)
             vim.notify("remark-preview: invalid `port`, using a free port", vim.log.levels.WARN)
         end)
         merged.port = 0
+    end
+
+    -- a list given by the user replaces the default instead of being merged index by index
+    if opts.root_markers ~= nil then
+        merged.root_markers = vim.deepcopy(opts.root_markers)
+    end
+    local markers_valid = vim.islist(merged.root_markers)
+        and vim.iter(merged.root_markers):all(function(marker)
+            return type(marker) == "string" and marker ~= ""
+        end)
+    if not markers_valid then
+        vim.schedule(function()
+            vim.notify("remark-preview: invalid `root_markers`, using the defaults", vim.log.levels.WARN)
+        end)
+        merged.root_markers = vim.deepcopy(M.defaults.root_markers)
     end
 
     M.options = merged

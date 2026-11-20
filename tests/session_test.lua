@@ -186,6 +186,44 @@ tests["an unexpected server exit closes every preview"] = function()
     assert(not server.is_running())
 end
 
+-- A project whose root is marked by ".root"; the document references an image next to the project
+-- directory's parent docs folder, so it is only reachable when the marker is honoured.
+local function project_with_shared_image(dir)
+    vim.fn.mkdir(dir .. "/proj/.root", "p")
+    vim.fn.mkdir(dir .. "/proj/docs", "p")
+    H.write(dir .. "/proj/shared.png", { "not really a png" })
+    H.write(dir .. "/proj/docs/a.md", { "# Root", "", "![shared](../shared.png)" })
+    return dir .. "/proj/docs/a.md"
+end
+
+local function page_of(file, jar_dir)
+    local opened = H.capture_open()
+    local buf = H.edit(file)
+    session.start(buf)
+    H.wait(function()
+        return started(buf)
+    end, 20000, "preview did not start")
+    return H.login(opened[1], jar_dir .. "/jar")
+end
+
+tests["root_markers from the configuration reach the server"] = function()
+    local dir = H.tmpdir()
+    local file = project_with_shared_image(dir)
+    config.setup({ root_markers = { ".root" } })
+    local page = page_of(file, dir)
+    assert(page:find("/f/shared.png", 1, true), "image outside docs/ but inside the root must be served")
+    assert(not page:find('class="rp-blocked"', 1, true))
+end
+
+tests["without a matching marker the document directory is the root"] = function()
+    local dir = H.tmpdir()
+    local file = project_with_shared_image(dir)
+    config.setup({ root_markers = { ".nothing-like-this" } })
+    local page = page_of(file, dir)
+    assert(page:find('class="rp-blocked"', 1, true), "image outside the document directory must be blocked")
+    assert(not page:find("/f/shared.png", 1, true))
+end
+
 tests["the server does not outlive a killed Neovim"] = function()
     local dir = H.tmpdir()
     H.write(dir .. "/o.md", { "# Orphan" })

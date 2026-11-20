@@ -1,6 +1,6 @@
 // Shared helpers for the server tests (no tests in this file).
 import { request as httpRequest } from "node:http";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -112,4 +112,46 @@ export function openSse(port, path, headers = {}) {
 export function tempDir(prefix = "rp-test-") {
   const dir = mkdtempSync(join(tmpdir(), prefix));
   return { dir, cleanup: () => rmSync(dir, { recursive: true, force: true }) };
+}
+
+// A 1x1 PNG.
+export const PNG = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==",
+  "base64",
+);
+
+/**
+ * A project with a root marker, documents, images, secrets and an escaping symlink:
+ *
+ *   proj/.git/  proj/.env  proj/.hidden/x.png
+ *   proj/docs/{a.md,other.md,notes.txt,escape.png -> ../../outside/secret.png}
+ *   proj/docs/img/{pic.png,"my pic.png"}  proj/assets/shared.png
+ *   outside/secret.png
+ */
+export function makeProject() {
+  const tmp = tempDir("rp-proj-");
+  const proj = join(tmp.dir, "proj");
+  for (const dir of [".git", ".hidden", "docs/img", "assets"]) {
+    mkdirSync(join(proj, dir), { recursive: true });
+  }
+  mkdirSync(join(tmp.dir, "outside"));
+  writeFileSync(join(proj, ".env"), "SECRET=1\n");
+  writeFileSync(join(proj, ".hidden", "x.png"), PNG);
+  writeFileSync(join(proj, "docs", "a.md"), "# Doc A\n\ntext\n");
+  writeFileSync(join(proj, "docs", "other.md"), "# Other doc\n\nother body\n");
+  writeFileSync(join(proj, "docs", "notes.txt"), "plain text\n");
+  writeFileSync(join(proj, "docs", "img", "pic.png"), PNG);
+  writeFileSync(join(proj, "docs", "img", "my pic.png"), PNG);
+  writeFileSync(join(proj, "assets", "shared.png"), PNG);
+  writeFileSync(join(tmp.dir, "outside", "secret.png"), PNG);
+  symlinkSync("../../outside/secret.png", join(proj, "docs", "escape.png"));
+  // realpath: the temp directory itself may be behind a symlink (/tmp on macOS)
+  const real = realpathSync(proj);
+  return {
+    dir: tmp.dir,
+    proj: real,
+    doc: join(real, "docs", "a.md"),
+    other: join(real, "docs", "other.md"),
+    cleanup: tmp.cleanup,
+  };
 }

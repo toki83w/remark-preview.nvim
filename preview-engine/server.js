@@ -13,12 +13,25 @@
 //   {"type":"closed","path":"/abs/file.md"}
 //   {"type":"error","path":"/abs/file.md","message":"..."}
 //   {"type":"fatal","message":"..."}   (startup failure, followed by exit code 1)
-// Environment: PREVIEW_THEME (default "dark"), PREVIEW_PORT (default: any free port).
+// Environment: PREVIEW_THEME (default "dark"), PREVIEW_PORT (default: any free port),
+// PREVIEW_ROOT_MARKERS (JSON list of files/directories marking a project root, default [".obsidian", ".git"]).
 // The process exits when stdin is closed (e.g. Neovim died).
 import { createInterface } from "node:readline";
 import { createPreviewServer } from "./preview-server.js";
 
-const app = createPreviewServer({ theme: process.env.PREVIEW_THEME || "dark" });
+function rootMarkersFromEnv() {
+  try {
+    const markers = JSON.parse(process.env.PREVIEW_ROOT_MARKERS || "null");
+    return Array.isArray(markers) && markers.every((m) => typeof m === "string") ? markers : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+const app = createPreviewServer({
+  theme: process.env.PREVIEW_THEME || "dark",
+  rootMarkers: rootMarkersFromEnv(),
+});
 
 function emit(message) {
   process.stdout.write(JSON.stringify(message) + "\n");

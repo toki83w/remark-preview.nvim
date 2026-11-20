@@ -3,7 +3,7 @@ import { rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { test } from "node:test";
 import { createPreviewServer } from "../preview-server.js";
-import { tempDir } from "./helpers.js";
+import { makeProject, tempDir } from "./helpers.js";
 
 // Real-browser check of the live swap. Skipped when Chrome is not available.
 async function launch() {
@@ -124,5 +124,77 @@ test("two documents open in two pages update independently", { timeout: 90000 },
     await browser.close();
     await app.shutdown();
     tmp.cleanup();
+  }
+});
+
+test("images load, anchors scroll in place and links open the other preview", { timeout: 90000 }, async (t) => {
+  const browser = await launch();
+  if (!browser) {
+    t.skip("Chrome/puppeteer not available");
+    return;
+  }
+
+  const project = makeProject();
+  const filler = Array.from({ length: 60 }, (_, i) => `Paragraph ${i}.\n`).join("\n");
+  writeFileSync(
+    project.doc,
+    [
+      "# Top",
+      "",
+      "[jump](#bottom) [other](other.md) ![p](img/pic.png)",
+      "",
+      '<img id="raw" src="../assets/shared.png">',
+      "",
+      "![blocked](../../outside/secret.png)",
+      "",
+      filler,
+      "## Bottom",
+      "",
+      "the end",
+      "",
+    ].join("\n"),
+  );
+  const app = createPreviewServer({ kroki: false });
+  await app.listen(0);
+
+  try {
+    const info = await app.open(project.doc);
+    const page = await browser.newPage();
+    await page.setRequestInterception(true);
+    page.on("request", (req) => (new URL(req.url()).hostname === "127.0.0.1" ? req.continue() : req.abort()));
+    await page.goto(info.url, { waitUntil: "load" });
+    await page.waitForSelector("#content h1");
+
+    // images from the document dir, a sibling dir and raw HTML really load; the blocked one does not
+    const widths = await page.evaluate(() =>
+      [...document.querySelectorAll("#content img")].map((img) => [img.getAttribute("alt") || img.id, img.naturalWidth]),
+    );
+    assert.deepEqual(
+      widths.sort(),
+      [["blocked", 0], ["p", 1], ["raw", 1]],
+      "unexpected image loading state",
+    );
+    assert.equal(await page.evaluate(() => document.querySelector("img.rp-blocked").hasAttribute("src")), false);
+
+    // an anchor scrolls the page and does not navigate away (the old <base> bug)
+    const before = await page.evaluate(() => location.pathname);
+    await page.evaluate(() => [...document.querySelectorAll("a")].find((a) => a.textContent === "jump").click());
+    await page.waitForFunction(() => window.scrollY > 100);
+    assert.equal(await page.evaluate(() => location.pathname), before);
+    assert.equal(await page.evaluate(() => location.hash), "#bottom");
+
+    // a link to another markdown file navigates to that document's preview
+    await Promise.all([
+      page.waitForNavigation({ waitUntil: "load" }),
+      page.evaluate(() => [...document.querySelectorAll("a")].find((a) => a.textContent === "other").click()),
+    ]);
+    assert.notEqual(await page.evaluate(() => location.pathname), before);
+    await page.waitForSelector("#content h1");
+    assert.equal(await page.evaluate(() => document.querySelector("#content h1").textContent), "Other doc");
+    await page.waitForFunction(() => document.getElementById("rp-status").className === "connected");
+  } finally {
+    await browser.close();
+    await app.shutdown();
+    project.cleanup();
   }
 });

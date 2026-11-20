@@ -50,6 +50,15 @@ html { scroll-behavior: smooth; }
     font: 0.85em/1.4 monospace; white-space: pre-wrap;
   }
   #rp-error[hidden] { display: none; }
+
+  /* references the preview refuses to serve or cannot find */
+  img.rp-blocked, img.rp-missing {
+    outline: 1px dashed var(--red, #d20f39); outline-offset: 2px;
+    color: var(--red, #d20f39);
+  }
+  a.rp-blocked, a.rp-missing {
+    color: var(--overlay1, #888); text-decoration: line-through; cursor: not-allowed;
+  }
 }
 @media print {
   #rp-status, #rp-error { display: none; }

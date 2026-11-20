@@ -180,6 +180,7 @@ function M.start(callback)
         env = {
             PREVIEW_THEME = config.options.theme,
             PREVIEW_PORT = tostring(config.options.port),
+            PREVIEW_ROOT_MARKERS = vim.json.encode(config.options.root_markers),
         },
         on_stdout = on_stdout,
         on_stderr = on_stderr,

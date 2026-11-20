@@ -1,11 +1,14 @@
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
-import { readFileSync } from "node:fs";
-import { readFile } from "node:fs/promises";
+import { createReadStream, readFileSync, realpathSync } from "node:fs";
+import { readFile, stat } from "node:fs/promises";
 import { createServer } from "node:http";
 import { createRequire } from "node:module";
-import { basename, dirname, join, resolve } from "node:path";
+import { basename, dirname, extname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import mime from "mime-types";
+import { isServableAsset } from "./links.js";
 import { render } from "./pipeline.js";
+import { DEFAULT_MARKERS, findRoot, hasHiddenSegment, isInside } from "./roots.js";
 import { renderShell } from "./shell.js";
 
 const engineDir = dirname(fileURLToPath(import.meta.url));
@@ -30,20 +33,32 @@ function parseCookies(header) {
   return cookies;
 }
 
+// Symlinked directories are resolved so that one file has one session, whatever path it is
+// reached by. The file itself is not resolved: its id must survive the file being deleted.
+function canonical(path) {
+  const abs = resolve(path);
+  try {
+    return join(realpathSync(dirname(abs)), basename(abs));
+  } catch {
+    return abs;
+  }
+}
+
 function sessionId(path) {
-  return createHash("sha1").update(path).digest("hex").slice(0, 12);
+  return createHash("sha1").update(canonical(path)).digest("hex").slice(0, 12);
 }
 
 /**
  * The preview server: one instance serves any number of documents, each as a
  * session reachable at /d/<id>/ and updated through Server-Sent Events.
  *
- * @param {{ theme?: string, token?: string, kroki?: { server?: string } | false }} options
+ * @param {{ theme?: string, token?: string, kroki?: { server?: string } | false, rootMarkers?: string[] }} options
  */
 export function createPreviewServer(options = {}) {
   const defaultTheme = options.theme || "dark";
   const kroki = options.kroki;
   const token = options.token || randomBytes(24).toString("hex");
+  const rootMarkers = options.rootMarkers || DEFAULT_MARKERS;
 
   /** @type {Map<string, object>} */
   const sessions = new Map();
@@ -78,6 +93,17 @@ export function createPreviewServer(options = {}) {
     return { version: session.version, html: session.html, title: session.title, headings: session.headings };
   }
 
+  // Where the URLs of a document may point, and how they are rewritten.
+  function linksFor(session) {
+    session.root = findRoot(session.path, { markers: rootMarkers });
+    return {
+      root: session.root,
+      docDir: dirname(session.path),
+      assetBase: `/d/${session.id}/f/`,
+      docLink: (absolutePath) => `/d/${register(absolutePath).id}/`,
+    };
+  }
+
   // Renders the file again. Renders of one session never overlap.
   function refresh(session) {
     const run = async () => {
@@ -88,7 +114,8 @@ export function createPreviewServer(options = {}) {
         return fail(session, `Cannot read ${session.path}: ${e.message}`);
       }
       try {
-        const result = await render(text, { theme: session.theme, path: session.path, kroki });
+        const links = linksFor(session);
+        const result = await render(text, { theme: session.theme, path: session.path, kroki, links });
         session.html = result.html;
         session.headings = result.headings;
         session.title = result.title || basename(session.path);
@@ -108,20 +135,12 @@ export function createPreviewServer(options = {}) {
     broadcast(session, "render-error", { message });
   }
 
-  /** Registers a document (or re-registers it) and renders it. */
-  async function open(path, openOptions = {}) {
-    const abs = resolve(path);
+  // Creates the session of a document without rendering it (that happens on the first request).
+  function register(path, theme = defaultTheme) {
+    const abs = canonical(path);
     const id = sessionId(abs);
-    const theme = openOptions.theme || defaultTheme;
     let session = sessions.get(id);
-    if (session) {
-      const themeChanged = session.theme !== theme;
-      session.theme = theme;
-      await refresh(session);
-      if (themeChanged) {
-        broadcast(session, "reload", {});
-      }
-    } else {
+    if (!session) {
       session = {
         id,
         path: abs,
@@ -131,18 +150,32 @@ export function createPreviewServer(options = {}) {
         title: basename(abs),
         version: 0,
         error: null,
+        root: null,
         clients: new Set(),
         queue: Promise.resolve(),
       };
       sessions.set(id, session);
-      await refresh(session);
     }
-    return { id, path: abs, url: sessionUrl(id) };
+    return session;
+  }
+
+  /** Registers a document (or re-registers it) and renders it. */
+  async function open(path, openOptions = {}) {
+    const theme = openOptions.theme || defaultTheme;
+    const existed = sessions.has(sessionId(path));
+    const session = register(path, theme);
+    const themeChanged = existed && session.theme !== theme;
+    session.theme = theme;
+    await refresh(session);
+    if (themeChanged) {
+      broadcast(session, "reload", {});
+    }
+    return { id: session.id, path, url: sessionUrl(session.id) };
   }
 
   /** Re-reads the document from disk and pushes the result to its viewers. */
   async function update(path) {
-    const session = sessions.get(sessionId(resolve(path)));
+    const session = sessions.get(sessionId(path));
     if (!session) {
       throw new Error(`No preview open for ${path}`);
     }
@@ -151,7 +184,7 @@ export function createPreviewServer(options = {}) {
   }
 
   function closeSession(path) {
-    const id = sessionId(resolve(path));
+    const id = sessionId(path);
     const session = sessions.get(id);
     if (!session) {
       return false;
@@ -187,7 +220,7 @@ export function createPreviewServer(options = {}) {
     return host === `127.0.0.1:${port}` || host === `localhost:${port}`;
   }
 
-  function handle(req, res) {
+  async function handle(req, res) {
     // DNS rebinding protection: only our own loopback names are accepted.
     if (!hostAllowed(req)) {
       return reply(res, 403, "Forbidden: unexpected Host header");
@@ -220,7 +253,7 @@ export function createPreviewServer(options = {}) {
       return reply(res, 200, req.method === "HEAD" ? "" : asset.body, { "Content-Type": asset.type });
     }
 
-    const match = /^\/d\/([0-9a-f]+)(\/events|\/)?$/.exec(url.pathname);
+    const match = /^\/d\/([0-9a-f]+)(\/events|\/f\/.+|\/)?$/.exec(url.pathname);
     if (!match) {
       return reply(res, 404, "Not Found");
     }
@@ -234,6 +267,14 @@ export function createPreviewServer(options = {}) {
     if (match[2] === "/events") {
       return serveEvents(req, res, session, url);
     }
+    if (match[2].startsWith("/f/")) {
+      return serveAsset(req, res, session, match[2].slice(3));
+    }
+    // A document reached through a link is rendered on its first visit.
+    await session.queue;
+    if (session.version === 0 && !session.error) {
+      await refresh(session);
+    }
     const page = renderShell({
       id: session.id,
       theme: session.theme,
@@ -243,6 +284,87 @@ export function createPreviewServer(options = {}) {
       error: session.error,
     });
     return reply(res, 200, req.method === "HEAD" ? "" : page, { "Content-Type": "text/html; charset=utf-8" });
+  }
+
+  // Files of the project (images, media, pdf) referenced by a document.
+  async function serveAsset(req, res, session, encodedPath) {
+    let rel;
+    try {
+      rel = encodedPath.split("/").map(decodeURIComponent).join("/");
+    } catch {
+      return reply(res, 400, "Bad Request");
+    }
+    if (rel.includes("\0")) {
+      return reply(res, 400, "Bad Request");
+    }
+    // Hidden files (.git, .env, ..), file types that are not media, and anything outside the root.
+    if (hasHiddenSegment(rel) || !isServableAsset(rel)) {
+      return reply(res, 403, "Forbidden");
+    }
+    const root = session.root || findRoot(session.path, { markers: rootMarkers });
+    const lexical = resolve(root, rel);
+    if (!isInside(root, lexical)) {
+      return reply(res, 403, "Forbidden");
+    }
+    let real;
+    try {
+      real = realpathSync(lexical);
+    } catch {
+      return reply(res, 404, "Not Found");
+    }
+    if (!isInside(root, real) || hasHiddenSegment(relative(root, real))) {
+      return reply(res, 403, "Forbidden"); // a symlink leading out of the root
+    }
+    let info;
+    try {
+      info = await stat(real);
+    } catch {
+      return reply(res, 404, "Not Found");
+    }
+    if (!info.isFile()) {
+      return reply(res, 404, "Not Found");
+    }
+
+    const headers = {
+      "Content-Type": mime.lookup(extname(real)) || "application/octet-stream",
+      "Accept-Ranges": "bytes",
+      "Cache-Control": "private, max-age=3600",
+      "X-Content-Type-Options": "nosniff",
+    };
+    if (extname(real).toLowerCase() === ".svg") {
+      headers["Content-Security-Policy"] = "sandbox"; // no scripts when an svg is opened on its own
+    }
+
+    let start = 0;
+    let end = info.size - 1;
+    let status = 200;
+    if (req.headers.range && info.size > 0) {
+      const range = /^bytes=(\d*)-(\d*)$/.exec(req.headers.range);
+      if (range && (range[1] !== "" || range[2] !== "")) {
+        if (range[1] === "") {
+          start = Math.max(0, info.size - Number(range[2]));
+        } else {
+          start = Number(range[1]);
+          if (range[2] !== "") {
+            end = Math.min(Number(range[2]), end);
+          }
+        }
+      }
+      if (!range || start > end || start >= info.size) {
+        return reply(res, 416, "Range Not Satisfiable", { "Content-Range": `bytes */${info.size}` });
+      }
+      status = 206;
+      headers["Content-Range"] = `bytes ${start}-${end}/${info.size}`;
+    }
+
+    headers["Content-Length"] = info.size === 0 ? 0 : end - start + 1;
+    res.writeHead(status, headers);
+    if (req.method === "HEAD" || info.size === 0) {
+      return res.end();
+    }
+    createReadStream(real, { start, end })
+      .on("error", () => res.destroy())
+      .pipe(res);
   }
 
   function serveEvents(req, res, session, url) {
@@ -267,7 +389,15 @@ export function createPreviewServer(options = {}) {
     }
   }
 
-  const server = createServer(handle);
+  const server = createServer((req, res) => {
+    handle(req, res).catch(() => {
+      if (res.headersSent) {
+        res.destroy();
+      } else {
+        reply(res, 500, "Internal Server Error");
+      }
+    });
+  });
 
   return {
     token,
