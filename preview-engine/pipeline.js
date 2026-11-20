@@ -62,7 +62,7 @@ function collectHeadings() {
 
 /**
  * The unified plugin list producing the HTML body of a document.
- * Shared by the preview server and the legacy remark-cli configuration.
+ * Used by the preview server (preview-server.js) and the command line renderer (render-cli.js).
  *
  * @param {{ theme?: string, kroki?: { server?: string } | false }} options
  */

@@ -1,111 +1,171 @@
+local util = require("remark-preview.util")
+
 local M = {}
 
--- Helper to get the absolute path to the plugin root
-local function get_plugin_path()
-    return vim.fn.fnamemodify(debug.getinfo(1).source:sub(2), ":h:h:h")
+local INSTALL_HINT = "Run :RemarkPreviewInstallDeps"
+local MIN_NODE_MAJOR = 20
+
+-- Files the preview server and the PDF export need.
+local ENGINE_FILES = {
+    "server.js",
+    "preview-server.js",
+    "pipeline.js",
+    "shell.js",
+    "export.js",
+    "preview.css",
+    "print.css",
+    "client/client.js",
+    "client/sync.cjs",
+    "client/shell.css",
+}
+
+-- Packages only needed by the PDF export: the preview works without them.
+local OPTIONAL_PACKAGES = { puppeteer = true }
+
+-- Runs a command and returns its trimmed stdout, or nil when it fails.
+local function output_of(cmd)
+    local ok, result = pcall(function()
+        return vim.system(cmd, { text = true }):wait(10000)
+    end)
+    if not ok or result.code ~= 0 then
+        return nil
+    end
+    return vim.trim(result.stdout)
 end
 
--- Helper to get paths relative to the preview-engine folder
-local function get_engine_path(file)
-    return vim.fs.joinpath(get_plugin_path(), "preview-engine", file)
+local function check_system()
+    vim.health.start("System")
+
+    if vim.fn.has("nvim-0.10") == 1 then
+        vim.health.ok("Neovim " .. tostring(vim.version()))
+    else
+        vim.health.error("Neovim 0.10 or newer is required", "vim.ui.open and vim.system are used")
+    end
+
+    if vim.fn.executable("node") ~= 1 then
+        vim.health.error("node is missing from PATH", "Install Node.js " .. MIN_NODE_MAJOR .. " or newer")
+    else
+        local version = output_of({ "node", "--version" })
+        local major = version and tonumber(version:match("^v(%d+)"))
+        if not major then
+            vim.health.warn("could not determine the Node.js version")
+        elseif major < MIN_NODE_MAJOR then
+            vim.health.error(
+                string.format("Node.js %s is too old", version),
+                "Node.js " .. MIN_NODE_MAJOR .. " or newer is required"
+            )
+        else
+            vim.health.ok("Node.js " .. version)
+        end
+    end
+
+    if vim.fn.executable("npm") == 1 then
+        vim.health.ok("npm is installed")
+    else
+        vim.health.error("npm is missing from PATH", "It installs the Node packages")
+    end
+end
+
+local function check_engine()
+    vim.health.start("Preview engine")
+
+    local engine_dir = util.engine_path("")
+    if vim.fn.isdirectory(engine_dir) ~= 1 then
+        vim.health.error("Engine directory missing: " .. engine_dir)
+        return false
+    end
+    vim.health.ok("Engine directory: " .. engine_dir)
+
+    for _, file in ipairs(ENGINE_FILES) do
+        if vim.fn.filereadable(util.engine_path(file)) == 1 then
+            vim.health.ok("Found " .. file)
+        else
+            vim.health.error("Missing " .. file)
+        end
+    end
+
+    if vim.fn.isdirectory(util.engine_path("node_modules")) ~= 1 then
+        vim.health.error("node_modules is missing in preview-engine/", INSTALL_HINT)
+        return false
+    end
+    return true
+end
+
+-- The list of packages comes from package.json, so it cannot drift from what is really needed.
+local function check_packages()
+    vim.health.start("Node packages")
+
+    local lines = vim.fn.readfile(util.engine_path("package.json"))
+    local ok, manifest = pcall(vim.json.decode, table.concat(lines, "\n"))
+    if not ok or type(manifest.dependencies) ~= "table" then
+        vim.health.error("could not read preview-engine/package.json")
+        return
+    end
+
+    local names = vim.tbl_keys(manifest.dependencies)
+    table.sort(names)
+    local missing, missing_optional = 0, {}
+    for _, name in ipairs(names) do
+        if vim.fn.isdirectory(util.engine_path("node_modules/" .. name)) ~= 1 then
+            if OPTIONAL_PACKAGES[name] then
+                table.insert(missing_optional, name)
+            else
+                missing = missing + 1
+                vim.health.error("Package missing: " .. name, INSTALL_HINT)
+            end
+        end
+    end
+    if missing == 0 then
+        vim.health.ok(string.format("%d packages installed", #names - #missing_optional))
+    end
+    for _, name in ipairs(missing_optional) do
+        vim.health.warn(name .. " is missing: PDF export is unavailable", INSTALL_HINT)
+    end
+end
+
+-- Chrome is what puppeteer prints the PDF with.
+local function check_export()
+    vim.health.start("PDF export")
+
+    if vim.fn.isdirectory(util.engine_path("node_modules/puppeteer")) ~= 1 then
+        vim.health.warn("puppeteer is not installed", INSTALL_HINT)
+        return
+    end
+    local script = 'import("puppeteer").then(m => console.log(m.default.executablePath()))'
+    -- run from the engine directory so that "puppeteer" resolves
+    local ok, result = pcall(function()
+        return vim.system({ "node", "-e", script }, { text = true, cwd = util.engine_path("") }):wait(10000)
+    end)
+    local path = ok and result.code == 0 and vim.trim(result.stdout) or nil
+    if path and path ~= "" and vim.fn.executable(path) == 1 then
+        vim.health.ok("Chrome for PDF export: " .. path)
+    else
+        vim.health.warn(
+            "no Chrome found for puppeteer: PDF export will fail",
+            "Run `npx puppeteer browsers install chrome` in " .. util.engine_path("")
+        )
+    end
+end
+
+local function check_configuration()
+    vim.health.start("Configuration")
+    local options = require("remark-preview.config").options
+    vim.health.info("theme: " .. options.theme)
+    vim.health.info("port: " .. (options.port == 0 and "automatic" or tostring(options.port)))
+    vim.health.info("root markers: " .. table.concat(options.root_markers, ", "))
+    vim.health.info("wikilinks: " .. tostring(options.wikilinks))
+    vim.health.info("Kroki server: " .. options.kroki.server .. " (diagram sources are sent to it)")
+    vim.health.info("follow the cursor: " .. tostring(options.sync_on_cursor))
 end
 
 function M.check()
     vim.health.start("remark-preview.nvim report")
-
-    -- 1. Check System Prerequisites
-    vim.health.info("Checking System Binaries...")
-    local sys_bins = { "node", "npm" }
-    for _, bin in ipairs(sys_bins) do
-        if vim.fn.executable(bin) == 1 then
-            vim.health.ok(bin .. " is installed")
-        else
-            vim.health.error(bin .. " is missing from PATH")
-        end
+    check_system()
+    if check_engine() then
+        check_packages()
+        check_export()
     end
-
-    -- 2. Check Plugin Engine State
-    vim.health.info("Checking Plugin Engine...")
-    local engine_dir = get_engine_path("")
-    local node_modules = get_engine_path("node_modules")
-
-    if vim.fn.isdirectory(engine_dir) == 1 then
-        vim.health.ok("Engine directory exists: " .. engine_dir)
-    else
-        vim.health.error("Engine directory missing: " .. engine_dir)
-    end
-
-    if vim.fn.isdirectory(node_modules) == 1 then
-        vim.health.ok("Local node_modules exist")
-    else
-        vim.health.error("node_modules missing in preview-engine/", "Run :RemarkPreviewInstall")
-        return
-    end
-
-    -- 3. Check Required NPM Packages
-    vim.health.info("Checking NPM Packages...")
-    local required_pkgs = {
-        "@widcardw/rehype-asciimath",
-        "live-server",
-        "puppeteer",
-        "rehype-callouts",
-        "rehype-document",
-        "rehype-highlight",
-        "rehype-katex",
-        "rehype-slug",
-        "rehype-stringify",
-        "remark-cli",
-        "remark-flexible-toc",
-        "remark-frontmatter",
-        "remark-gfm",
-        "remark-kroki",
-        "remark-mark-highlight",
-        "remark-math",
-        "remark-parse",
-        "remark-rehype",
-    }
-
-    for _, pkg in ipairs(required_pkgs) do
-        local pkg_path = get_engine_path(vim.fs.joinpath("node_modules", pkg))
-        if vim.fn.isdirectory(pkg_path) == 1 then
-            vim.health.ok("Package installed: " .. pkg)
-        else
-            vim.health.error("Package missing: " .. pkg, "Run :RemarkPreviewInstall")
-        end
-    end
-
-    -- 4. Check Local Binaries
-    vim.health.info("Checking Engine Binaries...")
-    local local_bins = {
-        remark = get_engine_path("node_modules/.bin/remark"),
-        ["live-server"] = get_engine_path("node_modules/.bin/live-server"),
-    }
-
-    for name, path in pairs(local_bins) do
-        if vim.fn.executable(path) == 1 then
-            vim.health.ok("Local binary found: " .. name)
-        else
-            vim.health.error("Local binary missing: " .. name, "Run :RemarkPreviewInstall")
-        end
-    end
-
-    -- 5. Check Asset Files
-    vim.health.info("Checking Asset Files...")
-    local asset_files = {
-        "remarkrc.js",
-        "export.js",
-        "preview.css",
-        "print.css",
-    }
-
-    for _, f in ipairs(asset_files) do
-        local p = get_engine_path(f)
-        if vim.fn.filereadable(p) == 1 then
-            vim.health.ok("Found asset: " .. f)
-        else
-            vim.health.error("Missing asset: " .. f)
-        end
-    end
+    check_configuration()
 end
 
 return M

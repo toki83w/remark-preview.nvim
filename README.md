@@ -4,11 +4,15 @@ A high-performance, highly customizable Markdown previewer for Neovim that utili
 
 ## 🚀 Features
 
-*   **On-Demand Sync**: Synchronize the browser scroll position to match your Neovim cursor with a single command.
+*   **Several previews at once**: every Markdown buffer gets its own URL and browser tab; saving a file updates only its own tab.
+*   **Live updates without reloading**: the page is updated in place on save, so the scroll position and unchanged elements are kept.
+*   **Images and links that work**: relative images (also `../assets/x.png` and images written as HTML), `#anchor` links and links to other Markdown files, which open in their own preview.
+*   **Line-accurate scroll sync**: scroll the browser to the line under your cursor with one command, or let it follow the cursor.
+*   **Obsidian vaults**: `[[wikilinks]]`, `[[Note#Heading]]`, `[[Note|alias]]` and `![[image.png|300]]` embeds, resolved by name like Obsidian does.
 *   **Extended Math Support**:
     *   Standard LaTeX via `$...$` and `$$...$$`.
     *   **Ampersand Math**: Use `&...&` for inline and `&&...&&` for block **AsciiMath** (powered by KaTeX and rehype-asciimath).
-*   **Diagrams (Kroki)**: Native support for Mermaid, PlantUML, Graphviz, and more. Transparent diagrams are automatically wrapped in high-contrast backgrounds for dark mode visibility.
+*   **Diagrams (Kroki)**: Native support for Mermaid, PlantUML, Graphviz, and more, cached between renders. Transparent diagrams are automatically wrapped in high-contrast backgrounds for dark mode visibility.
 *   **Advanced Task Lists**:
     *   Standard GFM `[ ]` and `[x]`.
     *   **Custom Markers**: Support for `[!]` (Important), `[?]` (Question), and `[>]` (Ongoing) with unique Nerd Font icons.
@@ -17,6 +21,7 @@ A high-performance, highly customizable Markdown previewer for Neovim that utili
     *   Unified **Catppuccin** Mocha (Dark) and Latte (Light) themes.
     *   Automatic theme switching via configuration.
     *   Optimized **Print Theme** for B&W paper exports.
+*   **PDF export** with the print theme, including images and diagrams.
 *   **Metadata Awareness**: Automatically ignores YAML/TOML frontmatter during rendering.
 *   **Subscript & Superscript**: Native support for `~sub~` and `^super^` syntax.
 
@@ -24,9 +29,10 @@ A high-performance, highly customizable Markdown previewer for Neovim that utili
 
 Before installing, ensure you have the following installed on your system:
 
-*   **Node.js** (LTS recommended)
-*   **npm** (bundled with Node.js)
+*   **Neovim 0.10** or newer (Linux or macOS; Windows is not supported)
+*   **Node.js 20** or newer, and **npm** (bundled with Node.js)
 *   **Nerd Fonts**: Required for viewing custom task icons correctly.
+*   **Chrome**, only for the PDF export: `npm install` lets puppeteer download one.
 
 ## 📦 Installation
 
@@ -40,7 +46,6 @@ Before installing, ensure you have the following installed on your system:
     build = "npm install --prefix preview-engine",
     opts = {
         theme = "dark", -- "dark" (Mocha) or "light" (Latte)
-        port_base = 8080,
         pdf = {
             format = "A4",
             margin = "1cm"
@@ -56,13 +61,18 @@ Before installing, ensure you have the following installed on your system:
 
 ## ⌨️ Commands
 
-*   `:RemarkPreviewToggle`: Starts or stops the live preview server.
-*   `:RemarkPreviewOpen`: Opens the preview in the browser (starts server if inactive).
-*   `:RemarkPreviewSyncPosition`: Manually syncs the browser scroll to the current Neovim line.
-*   `:RemarkPreviewExport [open]`: Exports the current file to PDF using the print theme. Optional `open` argument opens the PDF immediately.
-*   `:RemarkPreviewRestart`: Restarts the preview server.
+The preview commands act on the current buffer. The file must be saved to disk: the preview reads the file and updates when you save it.
+
+*   `:RemarkPreviewToggle`: Starts or stops the preview of the current buffer. Several buffers can be previewed at the same time.
+*   `:RemarkPreviewOpen`: Opens the preview in the browser (starts it if inactive).
+*   `:RemarkPreviewSyncPosition`: Scrolls the browser to the line under the cursor.
+*   `:RemarkPreviewExport [open]`: Exports the current file to PDF next to it, using the print theme. Optional `open` argument opens the PDF immediately.
+*   `:RemarkPreviewRestart`: Restarts the preview server and re-opens every active preview.
+*   `:RemarkPreviewStopAll`: Stops every preview and the server.
 *   `:RemarkPreviewInstallDeps`: Triggers the installation of local NPM dependencies.
-*   `:checkhealth remark-preview`: Verifies the installation of binaries and Node packages.
+*   `:checkhealth remark-preview`: Verifies Neovim, Node.js, the npm packages and Chrome, and shows the configuration in use.
+
+The preview server starts with the first preview and stops with the last one. It exits by itself if Neovim goes away.
 
 ## 📝 Syntax Examples
 
@@ -86,18 +96,84 @@ E = mc^2
 ### Sub/Superscript
 Water is H~2~O. The area is 10m^2^.
 
+### Diagrams
+````markdown
+```mermaid
+graph TD; A-->B
+```
+
+```kroki type=plantuml alt="Sequence"
+@startuml
+A -> B: hello
+@enduml
+```
+````
+
+## 🔗 Images and links
+
+Paths are resolved from the document, and a leading `/` means "from the project root". The **project root** is the nearest parent directory that contains `.obsidian` or `.git` (see `root_markers`), or the document's own directory when there is none. The home directory is never a root.
+
+*   `![x](img/pic.png)`, `![x](../assets/pic.png)` and `<img src="img/pic.png">` all work, as long as the file is inside the project root.
+*   Only media is served: images (including SVG), audio, video and PDF. Other files, hidden files (`.env`, `.git/...`) and anything outside the project root are refused; such a reference is shown crossed out or dashed, with the reason in its tooltip.
+*   `[other](other.md#section)` opens `other.md` in its own preview tab.
+*   Links to other kinds of files (a `.zip`, a `.txt`) are shown as dead links.
+*   A document you only reached through a link is refreshed when you save it from a preview of its own; otherwise reload the tab.
+
+## 🗂 Obsidian vaults
+
+Inside a vault (a project root containing `.obsidian`) these work like in Obsidian: files are found **by name**, wherever they are in the vault; with duplicate names the one closest to the current note wins, and `Folder/Note` picks one explicitly.
+
+| Syntax | Result |
+| --- | --- |
+| `[[Note]]`, `[[Note\|alias]]` | link to the note's preview |
+| `[[Note#Heading]]`, `[[#Heading]]` | link to a heading (of another or the same note) |
+| `![[image.png]]`, `![[image.png\|300]]`, `![[image.png\|300x200]]` | the image, optionally sized |
+| `[[file.pdf]]`, `![[Note]]` | a link to the file or note |
+| `[[Missing]]` | shown dimmed, without a target |
+
+Not supported yet: embedding a note's content (`![[Note]]` is a link), `#tags`, `%%comments%%` and block references (`[[Note#^id]]` links to the note). Inside a table, write the pipe as `\|`. Outside a vault `[[...]]` stays plain text unless you set `wikilinks = true`.
+
 ## ⚙️ Configuration
 
 ```lua
 require("remark-preview").setup({
-  theme = "dark",       -- "dark" or "light"
-  port_base = 8080,     -- Starting port for the local server
+  theme = "dark",          -- "dark" (Mocha) or "light" (Latte)
+  port = 0,                -- 0 lets the OS pick a free port
+  debug = false,           -- print debug messages
+  sync_on_cursor = false,  -- scroll the preview along with the cursor
+  root_markers = { ".obsidian", ".git" }, -- what marks the project root
+  wikilinks = "auto",      -- Obsidian [[links]]: "auto" (inside a vault), true or false
+  kroki = {
+    server = "https://kroki.io", -- draws the diagrams, see "Security"
+  },
   pdf = {
     format = "A4",
-    margin = "1cm"
-  }
+    margin = "1cm",
+  },
 })
 ```
+
+`port_base` from earlier versions is no longer used: a warning is shown and it is ignored.
+
+## 🔒 Security and privacy
+
+*   The preview server listens on `127.0.0.1` only and rejects requests whose `Host` header is not its own (DNS rebinding). The URL that opens the preview carries a random token that the server exchanges for a cookie; requests without it are refused. The token is visible in the command line of the browser launcher for a moment, which matters on shared machines.
+*   Files are served only from the project root, only media types, never hidden files, and symbolic links that lead out of the root are refused.
+*   **Raw HTML in a document runs in the preview page**, as on GitHub's wiki or a local HTML file. Preview documents you do not trust at your own risk.
+*   **The source of every diagram is sent to the Kroki server** (`https://kroki.io` by default). Point `kroki.server` at a self-hosted instance for private documents.
+*   The page loads its stylesheets for math, code and theming from CDNs, so the preview needs internet access for those. The PDF export needs it for the math styling too.
+*   Chrome is started with `--no-sandbox` for the PDF export, which is needed in many containers.
+
+## 🧪 Development
+
+```sh
+cd preview-engine && npm install   # once
+npm test                            # Node tests (some use a real Chrome and skip without one)
+cd .. && nvim --headless -u NONE -l tests/run.lua   # Lua tests, run from the repository root
+stylua .                            # formatting
+```
+
+`node preview-engine/render-cli.js file.md` prints the HTML of a file, and `node preview-engine/export-cli.js file.md out.pdf` exports it without Neovim.
 
 ## 📄 License
 
