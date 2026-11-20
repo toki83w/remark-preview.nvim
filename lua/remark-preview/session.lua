@@ -134,7 +134,7 @@ function M.start(bufnr, opts)
             sessions[bufnr] = nil
         end
         if next(sessions) == nil then
-            server.stop()
+            server.stop_unless_retained()
         end
         util.notify(message, vim.log.levels.ERROR)
     end
@@ -177,7 +177,7 @@ function M.stop(bufnr)
     detach(bufnr)
     close_timer(session)
     if next(sessions) == nil then
-        server.stop()
+        server.stop_unless_retained()
     elseif not session.starting then
         server.request({ type = "close", path = session.path }, "closed", function() end)
     end

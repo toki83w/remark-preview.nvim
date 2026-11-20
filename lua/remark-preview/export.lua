@@ -1,81 +1,56 @@
 local config = require("remark-preview.config")
+local server = require("remark-preview.server")
+local session = require("remark-preview.session")
 local util = require("remark-preview.util")
 
 local M = {}
 
-local function remark_bin()
-    return util.engine_path("node_modules/.bin/remark")
-end
-
--- Binaries needed by the export (the preview itself only needs node).
-function M.check()
-    local missing = {}
-    for _, bin in ipairs({ "node", remark_bin() }) do
-        if vim.fn.executable(bin) ~= 1 then
-            table.insert(missing, bin)
-        end
-    end
-    return missing
-end
-
--- Exports the file of a buffer to PDF with the print theme.
--- Step 1 renders a standalone HTML file, step 2 prints it with puppeteer.
+-- Exports the file of a buffer to PDF with the print theme. The preview server renders the page
+-- (images, diagrams and links resolve as in the preview) and prints it with puppeteer.
 function M.export_pdf(bufnr, open_after)
     local input = util.buffer_path(bufnr)
     if not input or vim.fn.filereadable(input) ~= 1 then
         util.notify("save the buffer to a file first", vim.log.levels.WARN)
         return
     end
-    local missing = M.check()
-    if #missing > 0 then
-        util.notify(
-            "missing " .. table.concat(missing, ", ") .. ", run :RemarkPreviewInstallDeps",
-            vim.log.levels.ERROR
-        )
+    if vim.fn.isdirectory(util.engine_path("node_modules/puppeteer")) ~= 1 then
+        util.notify("puppeteer is missing, run :RemarkPreviewInstallDeps", vim.log.levels.ERROR)
         return
     end
 
     local output_pdf = vim.fn.fnamemodify(input, ":r") .. ".pdf"
-    local temp_html = vim.fn.tempname() .. ".html"
-
     util.notify("exporting to PDF (print theme)...")
-    vim.fn.jobstart({
-        remark_bin(),
-        input,
-        "--rc-path",
-        util.engine_path("remarkrc.js"),
-        "--output",
-        temp_html,
-    }, {
-        env = {
-            PREVIEW_THEME = "print",
-            ENGINE_PATH = util.engine_path(""),
-            DOC_DIR = vim.fn.fnamemodify(input, ":h"),
-        },
-        on_exit = function(_, render_code)
-            if render_code ~= 0 then
-                util.notify("export failed: could not render the document", vim.log.levels.ERROR)
+
+    -- the server must outlive the closing of the last preview while the export runs
+    local release = server.retain()
+    local function finish()
+        release()
+        if #session.active() == 0 then
+            server.stop_unless_retained()
+        end
+    end
+
+    server.start(function(ok, err)
+        if not ok then
+            finish()
+            util.notify("export failed: " .. (err or "could not start the preview server"), vim.log.levels.ERROR)
+            return
+        end
+        local job = { type = "export", path = input, out = output_pdf }
+        job.format = config.options.pdf.format
+        job.margin = config.options.pdf.margin
+        server.request(job, "exported", function(message, export_err)
+            finish()
+            if not message then
+                util.notify("export failed: " .. (export_err or "unknown error"), vim.log.levels.ERROR)
                 return
             end
-            vim.fn.jobstart({ "node", util.engine_path("export.js"), temp_html, output_pdf }, {
-                env = {
-                    PDF_FORMAT = config.options.pdf.format,
-                    PDF_MARGIN = config.options.pdf.margin,
-                },
-                on_exit = function(_, pdf_code)
-                    os.remove(temp_html)
-                    if pdf_code ~= 0 then
-                        util.notify("export failed, run :RemarkPreviewInstallDeps", vim.log.levels.ERROR)
-                        return
-                    end
-                    util.notify("PDF saved: " .. output_pdf)
-                    if open_after then
-                        util.open_external(output_pdf)
-                    end
-                end,
-            })
-        end,
-    })
+            util.notify("PDF saved: " .. output_pdf)
+            if open_after then
+                util.open_external(output_pdf)
+            end
+        end)
+    end)
 end
 
 return M

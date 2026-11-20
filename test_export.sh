@@ -1,28 +1,21 @@
 #!/bin/bash
+# Exports test.md (not under revision control) to test.pdf with the print theme.
+# Usage: ./test_export.sh
 
 REPO_ROOT=$PWD
-ENGINE_DIR="$REPO_ROOT/preview-engine"
-EXPORT_SCRIPT="$ENGINE_DIR/export.js"
-
-TEMP_HTML="$REPO_ROOT/test.html"
+INPUT_MD="$REPO_ROOT/test.md"
 OUTPUT_PDF="$REPO_ROOT/test.pdf"
 
-# 1. Invoke the renderer with 'print' style
-./test_render.sh print
-
-if [ $? -ne 0 ]; then
-    echo "Error: Rendering step failed. Aborting export."
+if [ ! -f "$INPUT_MD" ]; then
+    echo "Error: $INPUT_MD not found. Create one as it's not under revision control."
     exit 1
 fi
 
-# 2. Convert the generated HTML to PDF
-echo "Exporting to PDF..."
+echo "Exporting $INPUT_MD to PDF..."
 export PDF_FORMAT="A4"
 export PDF_MARGIN="1cm"
 
-node "$EXPORT_SCRIPT" "$TEMP_HTML" "$OUTPUT_PDF"
-
-if [ $? -eq 0 ]; then
+if node "$REPO_ROOT/preview-engine/export-cli.js" "$INPUT_MD" "$OUTPUT_PDF"; then
     echo "Success: Generated $OUTPUT_PDF"
 else
     echo "Error: PDF export failed."

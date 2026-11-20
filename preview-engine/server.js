@@ -5,6 +5,7 @@
 //   {"type":"open","path":"/abs/file.md","theme":"dark"}
 //   {"type":"update","path":"/abs/file.md"}
 //   {"type":"scroll","path":"/abs/file.md","line":42}
+//   {"type":"export","path":"/abs/file.md","out":"/abs/file.pdf","format":"A4","margin":"1cm"}
 //   {"type":"close","path":"/abs/file.md"}
 //   {"type":"shutdown"}
 // stdout (one JSON object per line):
@@ -12,6 +13,7 @@
 //   {"type":"opened","path":"/abs/file.md","id":"...","url":"http://127.0.0.1:1234/d/<id>/?t=<token>"}
 //   {"type":"updated","path":"/abs/file.md","version":2}
 //   {"type":"scrolled","path":"/abs/file.md","viewers":1}
+//   {"type":"exported","path":"/abs/file.md","out":"/abs/file.pdf"}   (the export runs in the background)
 //   {"type":"closed","path":"/abs/file.md"}
 //   {"type":"error","path":"/abs/file.md","message":"..."}
 //   {"type":"fatal","message":"..."}   (startup failure, followed by exit code 1)
@@ -70,6 +72,13 @@ async function dispatch(message) {
       emit({ type: "scrolled", path: message.path, viewers: app.scroll(message.path, message.line) });
       break;
     }
+    case "export":
+      // Takes seconds: do not hold up the messages that follow.
+      app
+        .exportPdf({ path: message.path, out: message.out, format: message.format, margin: message.margin })
+        .then((out) => emit({ type: "exported", path: message.path, out }))
+        .catch((e) => emit({ type: "error", path: message.path, message: e.message }));
+      break;
     case "close":
       emit({ type: "closed", path: message.path, found: app.closeSession(message.path) });
       break;

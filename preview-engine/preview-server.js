@@ -1,9 +1,10 @@
+import { spawn } from "node:child_process";
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import { createReadStream, readFileSync, realpathSync } from "node:fs";
 import { readFile, stat } from "node:fs/promises";
 import { createServer } from "node:http";
 import { createRequire } from "node:module";
-import { basename, dirname, extname, join, relative, resolve } from "node:path";
+import { basename, dirname, extname, isAbsolute, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import mime from "mime-types";
 import { isServableAsset } from "./links.js";
@@ -53,7 +54,7 @@ function sessionId(path) {
  * session reachable at /d/<id>/ and updated through Server-Sent Events.
  *
  * @param {{ theme?: string, token?: string, kroki?: { server?: string } | false, rootMarkers?: string[],
- *   wikilinks?: boolean | "auto" }} options
+ *   wikilinks?: boolean | "auto", exportScript?: string }} options
  */
 export function createPreviewServer(options = {}) {
   const defaultTheme = options.theme || "dark";
@@ -61,6 +62,9 @@ export function createPreviewServer(options = {}) {
   const token = options.token || randomBytes(24).toString("hex");
   const rootMarkers = options.rootMarkers || DEFAULT_MARKERS;
   const wikilinks = options.wikilinks ?? "auto";
+  const exportScript = options.exportScript || join(engineDir, "export.js");
+  /** @type {Set<import("node:child_process").ChildProcess>} */
+  const exporting = new Set();
 
   /** @type {Map<string, object>} */
   const sessions = new Map();
@@ -277,7 +281,7 @@ export function createPreviewServer(options = {}) {
       return reply(res, 200, req.method === "HEAD" ? "" : asset.body, { "Content-Type": asset.type });
     }
 
-    const match = /^\/d\/([0-9a-f]+)(\/events|\/f\/.+|\/)?$/.exec(url.pathname);
+    const match = /^\/d\/([0-9a-f]+)(\/events|\/print|\/f\/.+|\/)?$/.exec(url.pathname);
     if (!match) {
       return reply(res, 404, "Not Found");
     }
@@ -294,6 +298,9 @@ export function createPreviewServer(options = {}) {
     if (match[2].startsWith("/f/")) {
       return serveAsset(req, res, session, match[2].slice(3));
     }
+    if (match[2] === "/print") {
+      return servePrint(req, res, session);
+    }
     // A document reached through a link is rendered on its first visit.
     await session.queue;
     if (session.version === 0 && !session.error) {
@@ -309,6 +316,69 @@ export function createPreviewServer(options = {}) {
       warnings: session.warnings,
     });
     return reply(res, 200, req.method === "HEAD" ? "" : page, { "Content-Type": "text/html; charset=utf-8" });
+  }
+
+  // The document rendered with the print theme as a plain page, for the PDF export.
+  async function servePrint(req, res, session) {
+    await session.queue;
+    let text;
+    try {
+      text = await readFile(session.path, "utf8");
+    } catch (e) {
+      return reply(res, 500, `Cannot read ${session.path}: ${e.message}`);
+    }
+    let result;
+    try {
+      result = await render(text, { theme: "print", path: session.path, kroki, links: linksFor(session), wikilinks });
+    } catch (e) {
+      return reply(res, 500, `Render failed: ${e && e.message ? e.message : e}`);
+    }
+    const page = renderShell({
+      id: session.id,
+      theme: "print",
+      title: result.title || basename(session.path),
+      html: result.html,
+      version: session.version,
+      live: false,
+    });
+    return reply(res, 200, req.method === "HEAD" ? "" : page, { "Content-Type": "text/html; charset=utf-8" });
+  }
+
+  /**
+   * Prints a document to a PDF file with the print theme. The page is loaded from this server, so
+   * images, diagrams and links resolve exactly as in the preview. Resolves with the file path.
+   *
+   * @param {{ path: string, out: string, format?: string, margin?: string }} job
+   */
+  function exportPdf({ path, out, format, margin }) {
+    if (typeof out !== "string" || !isAbsolute(out)) {
+      return Promise.reject(new Error("The PDF path must be absolute"));
+    }
+    const session = register(path);
+    const url = `http://127.0.0.1:${port}/d/${session.id}/print?t=${token}`;
+    return new Promise((resolveExport, reject) => {
+      const child = spawn(process.execPath, [exportScript, url, out], {
+        env: { ...process.env, PDF_FORMAT: format || "A4", PDF_MARGIN: margin || "1cm" },
+        stdio: ["ignore", "ignore", "pipe"],
+      });
+      exporting.add(child);
+      let stderr = "";
+      child.stderr.on("data", (chunk) => {
+        stderr = (stderr + chunk).slice(-2000);
+      });
+      child.on("error", (e) => {
+        exporting.delete(child);
+        reject(new Error(`Cannot start the export: ${e.message}`));
+      });
+      child.on("close", (code) => {
+        exporting.delete(child);
+        if (code === 0) {
+          resolveExport(out);
+        } else {
+          reject(new Error(stderr.trim().slice(0, 500) || `the export failed (exit code ${code})`));
+        }
+      });
+    });
   }
 
   // Files of the project (images, media, pdf) referenced by a document.
@@ -430,6 +500,7 @@ export function createPreviewServer(options = {}) {
     open,
     update,
     scroll,
+    exportPdf,
     closeSession,
     sessionUrl,
     address: () => server.address(),
@@ -455,6 +526,9 @@ export function createPreviewServer(options = {}) {
 
     async shutdown() {
       clearInterval(heartbeat);
+      for (const child of exporting) {
+        child.kill();
+      }
       for (const session of sessions.values()) {
         for (const res of session.clients) {
           res.end();

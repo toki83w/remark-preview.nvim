@@ -15,6 +15,7 @@ local state = {
     pending = {}, -- ordered { key, path, callback } of requests awaiting an answer
     partial = "", -- incomplete stdout line
     stderr = {}, -- last stderr lines, for error messages
+    retained = 0, -- work in flight (exports) that must not lose its server
 }
 
 -- Called when the server process ended without being stopped by us.
@@ -216,6 +217,25 @@ function M.request(message, answer_type, callback)
     end
     table.insert(state.pending, { key = answer_type, path = message.path, callback = callback })
     vim.fn.chansend(state.job, vim.json.encode(message) .. "\n")
+end
+
+-- Marks the server as needed by some work in flight (an export). Returns the function that ends it.
+function M.retain()
+    state.retained = state.retained + 1
+    local released = false
+    return function()
+        if not released then
+            released = true
+            state.retained = state.retained - 1
+        end
+    end
+end
+
+-- Stops the server unless something retained it. Used when the last preview closes.
+function M.stop_unless_retained()
+    if state.retained == 0 then
+        M.stop()
+    end
 end
 
 -- Stops the server. Pending requests are dropped.

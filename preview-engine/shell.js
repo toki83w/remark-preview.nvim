@@ -38,13 +38,23 @@ export function escapeHtml(value) {
  * the client swaps it in place when the server pushes an update.
  *
  * @param {{ id: string, theme: string, title: string, html: string, version: number,
- *   error?: string|null, warnings?: string[] }} page
- *   error: the last render failed; warnings: the render worked but something is wrong (a diagram)
+ *   error?: string|null, warnings?: string[], live?: boolean }} page
+ *   error: the last render failed; warnings: the render worked but something is wrong (a diagram);
+ *   live: false gives a plain page for printing, without the scripts, status dot and banner
  */
-export function renderShell({ id, theme, title, html, version, error = null, warnings = [] }) {
+export function renderShell({ id, theme, title, html, version, error = null, warnings = [], live = true }) {
   const cls = escapeHtml(theme);
   // an error wins over warnings: the content shown is then the last good render
   const banner = error ? { text: error, warning: false } : { text: warnings.join("\n"), warning: true };
+  const liveParts = {
+    top: `<span id="rp-status" title="connecting"></span>
+<div id="rp-error"${banner.text ? "" : " hidden"}${banner.warning ? ' class="warning"' : ""}>${escapeHtml(banner.text)}</div>
+`,
+    scripts: `<script src="/_/morphdom.js"></script>
+<script src="/_/sync.js"></script>
+<script src="/_/client.js" data-id="${escapeHtml(id)}" data-version="${Number(version)}"></script>
+`,
+  };
   const links = CSS_LINKS.map((href) => `<link rel="stylesheet" href="${href}">`).join("\n");
   return `<!doctype html>
 <html lang="en" class="${cls}">
@@ -58,15 +68,10 @@ ${loadCss(theme)}
 </style>
 </head>
 <body class="${cls}">
-<span id="rp-status" title="connecting"></span>
-<div id="rp-error"${banner.text ? "" : " hidden"}${banner.warning ? ' class="warning"' : ""}>${escapeHtml(banner.text)}</div>
-<div id="content">
+${live ? liveParts.top : ""}<div id="content">
 ${html}
 </div>
-<script src="/_/morphdom.js"></script>
-<script src="/_/sync.js"></script>
-<script src="/_/client.js" data-id="${escapeHtml(id)}" data-version="${Number(version)}"></script>
-</body>
+${live ? liveParts.scripts : ""}</body>
 </html>
 `;
 }
