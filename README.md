@@ -175,6 +175,8 @@ stylua .                            # formatting
 
 `node preview-engine/render-cli.js file.md` prints the HTML of a file, and `node preview-engine/export-cli.js file.md out.pdf` exports it without Neovim.
 
+`examples/vault/features.md` is a reference document that uses every feature and says what to expect; `preview-engine/test/reference.test.js` keeps it honest. `examples/preview.sh` opens it (or any Markdown file) in Neovim with this checkout of the plugin and your own configuration left out, and starts the preview in the browser: `examples/preview.sh --help` lists the options.
+
 ## 📄 License
 
 MIT

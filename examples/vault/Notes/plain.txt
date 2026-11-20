@@ -1,0 +1,2 @@
+This is a plain text file. Links to it from a document show as dead links, because only images,
+audio, video and PDF files are served by the preview.
