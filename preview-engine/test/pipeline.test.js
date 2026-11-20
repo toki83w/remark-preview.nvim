@@ -10,8 +10,8 @@ const opts = { kroki: false };
 
 test("renders headings with slug ids, collects headings and title", async () => {
   const { html, headings, title } = await render(fixture("features.md"), opts);
-  assert.match(html, /<h1 id="main-title">Main Title<\/h1>/);
-  assert.match(html, /<h2 id="section-one">Section One<\/h2>/);
+  assert.match(html, /<h1[^>]*id="main-title"[^>]*>Main Title<\/h1>/);
+  assert.match(html, /<h2[^>]*id="section-one"[^>]*>Section One<\/h2>/);
   assert.equal(title, "Main Title");
   assert.deepEqual(
     headings.map((h) => [h.depth, h.id, h.text]),
@@ -31,7 +31,7 @@ test("strips yaml frontmatter", async () => {
 
 test("renders GFM tables and does not use single tilde strikethrough", async () => {
   const { html } = await render("| a | b |\n|---|---|\n| 1 | 2 |\n\n~~gone~~ and ~sub~", opts);
-  assert.match(html, /<table>/);
+  assert.match(html, /<table[ >]/);
   assert.match(html, /<del>gone<\/del>/);
   assert.match(html, /<sub>sub<\/sub>/);
 });

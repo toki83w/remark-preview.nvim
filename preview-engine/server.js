@@ -4,12 +4,14 @@
 // stdin  (one JSON object per line):
 //   {"type":"open","path":"/abs/file.md","theme":"dark"}
 //   {"type":"update","path":"/abs/file.md"}
+//   {"type":"scroll","path":"/abs/file.md","line":42}
 //   {"type":"close","path":"/abs/file.md"}
 //   {"type":"shutdown"}
 // stdout (one JSON object per line):
 //   {"type":"ready","port":1234,"token":"..."}
 //   {"type":"opened","path":"/abs/file.md","id":"...","url":"http://127.0.0.1:1234/d/<id>/?t=<token>"}
 //   {"type":"updated","path":"/abs/file.md","version":2}
+//   {"type":"scrolled","path":"/abs/file.md","viewers":1}
 //   {"type":"closed","path":"/abs/file.md"}
 //   {"type":"error","path":"/abs/file.md","message":"..."}
 //   {"type":"fatal","message":"..."}   (startup failure, followed by exit code 1)
@@ -55,6 +57,13 @@ async function dispatch(message) {
     case "update": {
       const version = await app.update(message.path);
       emit({ type: "updated", path: message.path, version });
+      break;
+    }
+    case "scroll": {
+      if (!Number.isInteger(message.line) || message.line < 1) {
+        throw new Error(`Invalid line: ${message.line}`);
+      }
+      emit({ type: "scrolled", path: message.path, viewers: app.scroll(message.path, message.line) });
       break;
     }
     case "close":

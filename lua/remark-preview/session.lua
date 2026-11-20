@@ -9,11 +9,54 @@ local augroup = vim.api.nvim_create_augroup("RemarkPreviewSessions", { clear = t
 -- Active previews, keyed by buffer number: { path, id, url, starting }.
 local sessions = {}
 
+local CURSOR_DEBOUNCE_MS = 150
+
 local function detach(bufnr)
     pcall(vim.api.nvim_clear_autocmds, { group = augroup, buffer = bufnr })
 end
 
+local function close_timer(session)
+    if session.timer then
+        session.timer:stop()
+        session.timer:close()
+        session.timer = nil
+    end
+end
+
+-- The line the cursor is on in the window showing the buffer (the current window if it shows it).
+local function cursor_line(bufnr)
+    local win = vim.api.nvim_get_current_buf() == bufnr and vim.api.nvim_get_current_win() or vim.fn.bufwinid(bufnr)
+    if win and win > 0 then
+        return vim.api.nvim_win_get_cursor(win)[1]
+    end
+    return math.max(1, vim.api.nvim_buf_get_mark(bufnr, '"')[1])
+end
+
 local function attach(bufnr)
+    if config.options.sync_on_cursor then
+        vim.api.nvim_create_autocmd({ "CursorMoved", "CursorMovedI" }, {
+            group = augroup,
+            buffer = bufnr,
+            callback = function()
+                local session = sessions[bufnr]
+                if not session or session.starting then
+                    return
+                end
+                session.timer = session.timer or vim.uv.new_timer()
+                session.timer:stop()
+                session.timer:start(
+                    CURSOR_DEBOUNCE_MS,
+                    0,
+                    vim.schedule_wrap(function()
+                        local current = sessions[bufnr]
+                        if current and current == session and vim.api.nvim_buf_is_valid(bufnr) then
+                            M.sync(bufnr, { quiet = true, only_if_moved = true })
+                        end
+                    end)
+                )
+            end,
+        })
+    end
     vim.api.nvim_create_autocmd("BufWritePost", {
         group = augroup,
         buffer = bufnr,
@@ -132,6 +175,7 @@ function M.stop(bufnr)
     end
     sessions[bufnr] = nil
     detach(bufnr)
+    close_timer(session)
     if next(sessions) == nil then
         server.stop()
     elseif not session.starting then
@@ -140,8 +184,9 @@ function M.stop(bufnr)
 end
 
 function M.stop_all()
-    for bufnr in pairs(sessions) do
+    for bufnr, session in pairs(sessions) do
         detach(bufnr)
+        close_timer(session)
     end
     sessions = {}
     server.stop()
@@ -166,20 +211,39 @@ function M.restart()
     end
 end
 
--- Scroll sync is rebuilt on top of the new server (line-accurate); not available yet.
-function M.sync(bufnr)
-    if not sessions[bufnr] then
-        util.notify("no active preview for this buffer", vim.log.levels.WARN)
+-- Shows the line the cursor is on in the browser.
+-- opts.quiet: no messages (used by the automatic cursor follow); opts.only_if_moved: skip an unchanged line.
+function M.sync(bufnr, opts)
+    opts = opts or {}
+    local session = sessions[bufnr]
+    if not session or session.starting then
+        if not opts.quiet then
+            util.notify("no active preview for this buffer", vim.log.levels.WARN)
+        end
         return
     end
-    util.notify("scroll sync is not available yet in the new preview server", vim.log.levels.WARN)
+    local line = cursor_line(bufnr)
+    if opts.only_if_moved and session.synced_line == line then
+        return
+    end
+    session.synced_line = line
+    server.request({ type = "scroll", path = session.path, line = line }, "scrolled", function(message, err)
+        if err then
+            if not opts.quiet then
+                util.notify("could not sync the preview: " .. err, vim.log.levels.WARN)
+            end
+        elseif message.viewers == 0 and not opts.quiet then
+            util.notify("no browser is showing this preview, open it with :RemarkPreviewOpen")
+        end
+    end)
 end
 
 -- The server died: every preview is gone with it.
 server.on_exit = function()
     local had_previews = next(sessions) ~= nil
-    for bufnr in pairs(sessions) do
+    for bufnr, session in pairs(sessions) do
         detach(bufnr)
+        close_timer(session)
     end
     sessions = {}
     if had_previews then

@@ -5,6 +5,7 @@ import rehypeKatex from "rehype-katex";
 import rehypeKrokiImgBg from "./rehype-kroki-img-bg.js";
 import rehypeRaw from "rehype-raw";
 import rehypeRewriteUrls from "./rehype-rewrite-urls.js";
+import rehypeSourceLines from "./rehype-source-lines.js";
 import rehypeSlug from "rehype-slug";
 import rehypeStringify from "rehype-stringify";
 import remarkAmpersandMath from "./remark-ampersand-math.js";
@@ -84,7 +85,7 @@ export function bodyPlugins({ theme = "dark", kroki = {} } = {}) {
   ]);
   plugins.push([remarkRehype, { allowDangerousHtml: true }]);
   // raw HTML becomes real elements, so images and links written as HTML are rewritten too
-  plugins.push(rehypeRaw, rehypeRewriteUrls);
+  plugins.push(rehypeRaw, rehypeRewriteUrls, rehypeSourceLines);
   plugins.push([rehypeKrokiImgBg, { aliases: KROKI_ALIASES }], rehypeSlug, collectHeadings, rehypeAsciimath, rehypeKatex);
   if (theme !== "print") {
     plugins.push(rehypeHighlight);

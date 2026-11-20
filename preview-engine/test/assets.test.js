@@ -145,7 +145,7 @@ describe("assets and links over HTTP", () => {
 
     const other = await get(target);
     assert.equal(other.status, 200);
-    assert.match(other.body, /<h1 id="other-doc">Other doc<\/h1>/);
+    assert.match(other.body, /<h1[^>]*id="other-doc"[^>]*>Other doc<\/h1>/);
     assert.match(other.body, /data-version="1"/);
   });
 

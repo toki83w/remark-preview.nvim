@@ -68,6 +68,10 @@ export function createPreviewServer(options = {}) {
       type: "text/javascript; charset=utf-8",
       body: readFileSync(join(engineDir, "client", "client.js")),
     },
+    "/_/sync.js": {
+      type: "text/javascript; charset=utf-8",
+      body: readFileSync(join(engineDir, "client", "sync.cjs")),
+    },
     "/_/morphdom.js": {
       type: "text/javascript; charset=utf-8",
       body: readFileSync(require.resolve("morphdom/dist/morphdom-umd.min.js")),
@@ -181,6 +185,16 @@ export function createPreviewServer(options = {}) {
     }
     await refresh(session);
     return session.version;
+  }
+
+  /** Tells the viewers of a document to show a source line; returns how many there are. */
+  function scroll(path, line) {
+    const session = sessions.get(sessionId(path));
+    if (!session) {
+      throw new Error(`No preview open for ${path}`);
+    }
+    broadcast(session, "scroll", { line });
+    return session.clients.size;
   }
 
   function closeSession(path) {
@@ -404,6 +418,7 @@ export function createPreviewServer(options = {}) {
     sessions,
     open,
     update,
+    scroll,
     closeSession,
     sessionUrl,
     address: () => server.address(),

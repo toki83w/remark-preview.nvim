@@ -4,6 +4,7 @@ M.defaults = {
     theme = "dark", -- "dark" (Mocha) or "light" (Latte)
     port = 0, -- 0 lets the OS choose a free port for the preview server
     debug = false, -- print debug messages
+    sync_on_cursor = false, -- scroll the preview along with the cursor (otherwise: :RemarkPreviewSyncPosition)
     -- A document's project root is its nearest ancestor containing one of these (else its own
     -- directory). Images and linked files are only served from inside it.
     root_markers = { ".obsidian", ".git" },
@@ -46,6 +47,8 @@ function M.setup(opts)
         end)
         merged.port = 0
     end
+
+    merged.sync_on_cursor = merged.sync_on_cursor == true
 
     -- a list given by the user replaces the default instead of being merged index by index
     if opts.root_markers ~= nil then

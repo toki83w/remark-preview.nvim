@@ -85,6 +85,26 @@
     window.scrollTo({ left: x, top: y, behavior: "instant" });
   }
 
+  // Scrolls so that a line of the markdown source is about a third of the way down the window.
+  function scrollToLine(line) {
+    var entries = [];
+    var offset = window.scrollY;
+    content.querySelectorAll("[data-line]").forEach(function (el) {
+      var rect = el.getBoundingClientRect();
+      entries.push({
+        start: Number(el.getAttribute("data-line")),
+        end: Number(el.getAttribute("data-line-end")) || Number(el.getAttribute("data-line")),
+        top: rect.top + offset,
+        height: rect.height,
+      });
+    });
+    var target = RemarkSync.lineToOffset(entries, line);
+    if (target === null) {
+      return;
+    }
+    window.scrollTo({ top: Math.max(0, target - window.innerHeight / 3), behavior: "smooth" });
+  }
+
   function connect() {
     var source = new EventSource("/d/" + id + "/events?v=" + version);
 
@@ -99,6 +119,9 @@
     };
     source.addEventListener("update", function (e) {
       applyUpdate(JSON.parse(e.data));
+    });
+    source.addEventListener("scroll", function (e) {
+      scrollToLine(JSON.parse(e.data).line);
     });
     source.addEventListener("render-error", function (e) {
       showError(JSON.parse(e.data).message);

@@ -24,11 +24,11 @@ tests["the commands act on the current buffer"] = function()
     assert(#opened == 2, "Open re-opens the browser of an active preview")
 
     vim.cmd("RemarkPreviewSyncPosition")
-    local warned = false
-    for _, message in ipairs(messages) do
-        warned = warned or message.msg:find("scroll sync", 1, true) ~= nil
-    end
-    assert(warned, "sync is announced as unavailable until the line sync is built")
+    H.wait(function()
+        return vim.iter(messages):any(function(m)
+            return m.msg:find("no browser is showing", 1, true) ~= nil
+        end)
+    end, 5000, "sync must tell that no browser shows the preview")
 
     vim.cmd("RemarkPreviewToggle")
     assert(not session.is_active(buf))

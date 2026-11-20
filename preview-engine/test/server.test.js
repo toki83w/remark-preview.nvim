@@ -51,7 +51,7 @@ describe("preview server", () => {
     assert.match(res.body, /<body class="dark">/);
     assert.match(res.body, /@scope \(\.dark\)/); // preview.css is inlined
     assert.match(res.body, /\.toc-sidebar/); // shell.css is inlined
-    assert.match(res.body, /<h1 id="doc-a">Doc A<\/h1>/);
+    assert.match(res.body, /<h1[^>]*id="doc-a"[^>]*>Doc A<\/h1>/);
     assert.match(res.body, /<title>Doc A<\/title>/);
     assert.match(res.body, /data-version="1"/);
     assert.doesNotMatch(res.body, /<base/);

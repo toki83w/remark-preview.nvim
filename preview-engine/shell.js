@@ -60,6 +60,7 @@ ${loadCss(theme)}
 ${html}
 </div>
 <script src="/_/morphdom.js"></script>
+<script src="/_/sync.js"></script>
 <script src="/_/client.js" data-id="${escapeHtml(id)}" data-version="${Number(version)}"></script>
 </body>
 </html>

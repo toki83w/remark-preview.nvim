@@ -57,6 +57,12 @@ tests["an invalid port falls back to 0 with a warning"] = function()
     end, 1000)
 end
 
+tests["sync_on_cursor is off by default and only true turns it on"] = function()
+    assert(config.setup(nil).sync_on_cursor == false)
+    assert(config.setup({ sync_on_cursor = true }).sync_on_cursor == true)
+    assert(config.setup({ sync_on_cursor = "yes" }).sync_on_cursor == false)
+end
+
 tests["root_markers replaces the default list instead of merging into it"] = function()
     assert(vim.deep_equal(config.setup(nil).root_markers, { ".obsidian", ".git" }))
     assert(vim.deep_equal(config.setup({ root_markers = { ".root" } }).root_markers, { ".root" }))
