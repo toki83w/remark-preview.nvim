@@ -18,6 +18,7 @@ import remarkMath from "remark-math";
 import remarkParse from "remark-parse";
 import remarkRehype from "remark-rehype";
 import remarkSubSuper from "./remark-sub-super.js";
+import remarkWikilinks from "./remark-wikilinks.js";
 import { remarkMark } from "remark-mark-highlight";
 import { toString } from "hast-util-to-string";
 import { unified } from "unified";
@@ -67,7 +68,8 @@ function collectHeadings() {
  */
 export function bodyPlugins({ theme = "dark", kroki = {} } = {}) {
   const plugins = [remarkParse, remarkFrontmatter, removeFrontmatter, remarkCustomTasks, [remarkGfm, { singleTilde: false }]];
-  plugins.push(remarkAmpersandMath, remarkMath);
+  // before the math plugins: they would split the text of a link such as [[A & B]]
+  plugins.push(remarkWikilinks, remarkAmpersandMath, remarkMath);
   if (kroki) {
     plugins.push([remarkKrokiCache, { ...kroki, server: kroki.server || DEFAULT_KROKI_SERVER, alias: KROKI_ALIASES }]);
   }
@@ -125,8 +127,10 @@ function getProcessor(theme, kroki) {
  * Renders markdown to an HTML fragment.
  *
  * @param {string} text markdown source
- * @param {{ theme?: string, path?: string, kroki?: { server?: string } | false, links?: object }} ctx
+ * @param {{ theme?: string, path?: string, kroki?: { server?: string } | false, links?: object,
+ *   wikilinks?: boolean | "auto" }} ctx
  *   links: { root, docDir, assetBase, docLink } makes local URLs work in the preview (see links.js)
+ *   wikilinks: Obsidian [[links]]; "auto" (default) enables them inside a vault (.obsidian at the root)
  * @returns {Promise<{ html: string, headings: Array<{depth: number, id: string, text: string}>, title: string, warnings: string[] }>}
  *   warnings: problems that did not stop the rendering (a diagram that could not be drawn, ...)
  */
@@ -134,7 +138,7 @@ export async function render(text, ctx = {}) {
   const theme = ctx.theme || "dark";
   const kroki = ctx.kroki === undefined ? DEFAULT_KROKI : ctx.kroki;
   const processor = getProcessor(theme, kroki);
-  const file = await processor.process(new VFile({ value: text, path: ctx.path, data: { links: ctx.links } }));
+  const file = await processor.process(new VFile({ value: text, path: ctx.path, data: { links: ctx.links, wikilinks: ctx.wikilinks } }));
   return {
     html: String(file),
     headings: file.data.headings || [],

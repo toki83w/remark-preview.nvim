@@ -234,6 +234,47 @@ tests["kroki.server from the configuration reaches the server and failures are s
     assert(page:find("cannot reach the Kroki server", 1, true), "the reason must be shown")
 end
 
+-- A vault (a directory with .obsidian) whose note links to another note and an attachment.
+local function vault_with_note(dir)
+    vim.fn.mkdir(dir .. "/vault/.obsidian", "p")
+    vim.fn.mkdir(dir .. "/vault/Notes", "p")
+    vim.fn.mkdir(dir .. "/vault/Attachments", "p")
+    H.write(dir .. "/vault/Notes/Idea.md", { "# Idea" })
+    H.write(dir .. "/vault/Attachments/pic.png", { "not really a png" })
+    H.write(dir .. "/vault/Notes/Source.md", { "# Source", "", "[[Idea]] and ![[pic.png]]" })
+    return dir .. "/vault/Notes/Source.md"
+end
+
+tests["wikilinks work in a vault by default"] = function()
+    local dir = H.tmpdir()
+    local page = page_of(vault_with_note(dir), dir)
+    assert(page:find('class="wikilink"', 1, true), "the [[Idea]] link must be rendered")
+    assert(page:find("/f/Attachments/pic.png", 1, true), "the ![[pic.png]] embed must be served from the vault")
+    assert(not page:find("[[Idea]]", 1, true))
+end
+
+tests["wikilinks = false reaches the server"] = function()
+    local dir = H.tmpdir()
+    config.setup({ wikilinks = false })
+    local page = page_of(vault_with_note(dir), dir)
+    assert(page:find("[[Idea]]", 1, true), "the text must stay as written")
+    assert(not page:find('class="wikilink"', 1, true))
+end
+
+tests["outside a vault wikilinks stay text, and wikilinks = true turns them on"] = function()
+    local dir = H.tmpdir()
+    vim.fn.mkdir(dir .. "/plain", "p")
+    H.write(dir .. "/plain/Idea.md", { "# Idea" })
+    H.write(dir .. "/plain/Source.md", { "# Source", "", "[[Idea]]" })
+    local page = page_of(dir .. "/plain/Source.md", dir)
+    assert(page:find("[[Idea]]", 1, true) and not page:find('class="wikilink"', 1, true))
+    session.stop_all()
+
+    config.setup({ wikilinks = true })
+    local forced = page_of(dir .. "/plain/Source.md", dir)
+    assert(forced:find('class="wikilink"', 1, true), "wikilinks = true must work outside a vault")
+end
+
 tests["the server does not outlive a killed Neovim"] = function()
     local dir = H.tmpdir()
     H.write(dir .. "/o.md", { "# Orphan" })

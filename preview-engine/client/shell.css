@@ -57,6 +57,10 @@ html { scroll-behavior: smooth; }
     outline: 1px dashed var(--red, #d20f39); outline-offset: 2px;
     color: var(--red, #d20f39);
   }
+  a.wikilink.unresolved {
+    color: var(--overlay1, #888); cursor: not-allowed;
+    text-decoration: none; border-bottom: 1px dashed var(--overlay1, #888);
+  }
   a.rp-blocked, a.rp-missing {
     color: var(--overlay1, #888); text-decoration: line-through; cursor: not-allowed;
   }

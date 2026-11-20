@@ -8,6 +8,9 @@ M.defaults = {
     -- A document's project root is its nearest ancestor containing one of these (else its own
     -- directory). Images and linked files are only served from inside it.
     root_markers = { ".obsidian", ".git" },
+    -- Obsidian [[wikilinks]] and ![[embeds]]: "auto" turns them on inside a vault (a project root
+    -- containing .obsidian), true always, false never.
+    wikilinks = "auto",
     kroki = {
         -- Diagrams (mermaid, plantuml, graphviz, ...) are drawn by a Kroki server. The source of every
         -- diagram is sent to it: point this at a self-hosted instance to keep your documents private.
@@ -54,6 +57,13 @@ function M.setup(opts)
     end
 
     merged.sync_on_cursor = merged.sync_on_cursor == true
+
+    if merged.wikilinks ~= "auto" and type(merged.wikilinks) ~= "boolean" then
+        vim.schedule(function()
+            vim.notify('remark-preview: `wikilinks` must be "auto", true or false, using "auto"', vim.log.levels.WARN)
+        end)
+        merged.wikilinks = "auto"
+    end
 
     local kroki_server = type(merged.kroki) == "table" and merged.kroki.server or nil
     if type(kroki_server) ~= "string" or not kroki_server:match("^https?://[^%s]+$") then

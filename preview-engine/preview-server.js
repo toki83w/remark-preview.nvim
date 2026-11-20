@@ -52,13 +52,15 @@ function sessionId(path) {
  * The preview server: one instance serves any number of documents, each as a
  * session reachable at /d/<id>/ and updated through Server-Sent Events.
  *
- * @param {{ theme?: string, token?: string, kroki?: { server?: string } | false, rootMarkers?: string[] }} options
+ * @param {{ theme?: string, token?: string, kroki?: { server?: string } | false, rootMarkers?: string[],
+ *   wikilinks?: boolean | "auto" }} options
  */
 export function createPreviewServer(options = {}) {
   const defaultTheme = options.theme || "dark";
   const kroki = options.kroki;
   const token = options.token || randomBytes(24).toString("hex");
   const rootMarkers = options.rootMarkers || DEFAULT_MARKERS;
+  const wikilinks = options.wikilinks ?? "auto";
 
   /** @type {Map<string, object>} */
   const sessions = new Map();
@@ -125,7 +127,7 @@ export function createPreviewServer(options = {}) {
       }
       try {
         const links = linksFor(session);
-        const result = await render(text, { theme: session.theme, path: session.path, kroki, links });
+        const result = await render(text, { theme: session.theme, path: session.path, kroki, links, wikilinks });
         session.html = result.html;
         session.headings = result.headings;
         session.warnings = result.warnings;

@@ -79,6 +79,21 @@ tests["an invalid kroki.server falls back to the default with a warning"] = func
     assert(messages[1].msg:find("kroki.server", 1, true))
 end
 
+tests["wikilinks is auto by default and accepts true and false"] = function()
+    assert(config.setup(nil).wikilinks == "auto")
+    assert(config.setup({ wikilinks = true }).wikilinks == true)
+    assert(config.setup({ wikilinks = false }).wikilinks == false)
+end
+
+tests["an invalid wikilinks value falls back to auto with a warning"] = function()
+    local messages = H.capture_notify()
+    assert(config.setup({ wikilinks = "sometimes" }).wikilinks == "auto")
+    H.wait(function()
+        return #messages > 0
+    end, 1000)
+    assert(messages[1].msg:find("wikilinks", 1, true))
+end
+
 tests["root_markers replaces the default list instead of merging into it"] = function()
     assert(vim.deep_equal(config.setup(nil).root_markers, { ".obsidian", ".git" }))
     assert(vim.deep_equal(config.setup({ root_markers = { ".root" } }).root_markers, { ".root" }))
