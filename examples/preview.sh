@@ -6,6 +6,9 @@
 #
 #   file.md             the document to open (default: examples/vault/features.md, the reference)
 #   -t, --theme THEME   colour theme: dark (default) or light
+#   -l, --local-diagrams on|off
+#                       draw mermaid and plantuml with the merman-cli and plantuml installed here (on, the
+#                       default), or always with the Kroki server (off); see :checkhealth remark-preview
 #   -f, --follow        scroll the browser along with the cursor
 #   -n, --no-browser    show the URL instead of opening a browser (for example over SSH)
 #   -h, --help          this text
@@ -25,6 +28,7 @@ die() {
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 NVIM_BIN="${NVIM:-nvim}"
 THEME="dark"
+LOCAL_DIAGRAMS="on"
 FOLLOW=0
 NO_BROWSER=0
 FILE=""
@@ -38,6 +42,15 @@ while [ $# -gt 0 ]; do
             ;;
         --theme=*)
             THEME="${1#--theme=}"
+            shift
+            ;;
+        -l | --local-diagrams)
+            [ $# -ge 2 ] || die "$1 needs a value: on or off"
+            LOCAL_DIAGRAMS="$2"
+            shift 2
+            ;;
+        --local-diagrams=*)
+            LOCAL_DIAGRAMS="${1#--local-diagrams=}"
             shift
             ;;
         -f | --follow)
@@ -74,6 +87,11 @@ case "$THEME" in
     *) die "unknown theme \"$THEME\": use dark or light" ;;
 esac
 
+case "$LOCAL_DIAGRAMS" in
+    on | off) ;;
+    *) die "unknown value \"$LOCAL_DIAGRAMS\" for --local-diagrams: use on or off" ;;
+esac
+
 [ -n "$FILE" ] || FILE="$ROOT/examples/vault/features.md"
 [ -f "$FILE" ] || die "no such file: $FILE"
 
@@ -84,6 +102,7 @@ command -v node >/dev/null 2>&1 || die "Node.js not found: it is needed by the p
 
 export REMARK_PREVIEW_ROOT="$ROOT"
 export REMARK_PREVIEW_THEME="$THEME"
+export REMARK_PREVIEW_LOCAL_DIAGRAMS="$LOCAL_DIAGRAMS"
 export REMARK_PREVIEW_FOLLOW="$FOLLOW"
 export REMARK_PREVIEW_NO_BROWSER="$NO_BROWSER"
 

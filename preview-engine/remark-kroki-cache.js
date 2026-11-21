@@ -83,7 +83,15 @@ async function requestDiagram({ server, type, source, timeoutMs, fetchImpl }) {
  * error is retried on the next render. Failures put a placeholder image in the document and
  * are reported in file.data.krokiErrors.
  *
- * @param {{ server?: string, alias?: string[], timeoutMs?: number, cache?: object, fetch?: typeof fetch }} options
+ * `local` maps diagram types to renderers of tools installed on this machine (local-diagrams.js).
+ * Those types are drawn locally and never sent to the Kroki server. When a local tool fails (a
+ * syntax error, a timeout) the failure is reported like any other: the source is deliberately not
+ * sent to a server as a second attempt, since someone using local tools may be doing so for privacy.
+ * `print` asks the local tools for their print look (the PDF export); Kroki draws the same either way.
+ *
+ * @param {{ server?: string, alias?: string[], timeoutMs?: number, cache?: object, fetch?: typeof fetch,
+ *   local?: Record<string, (source: string, options?: { print?: boolean }) => Promise<Buffer>>,
+ *   print?: boolean }} options
  */
 export default function remarkKrokiCache({
   server = DEFAULT_SERVER,
@@ -91,15 +99,27 @@ export default function remarkKrokiCache({
   timeoutMs = DEFAULT_TIMEOUT_MS,
   cache = sharedCache,
   fetch: fetchImpl = globalThis.fetch,
+  local = {},
+  print = false,
 } = {}) {
   async function diagram(type, source) {
-    const key = createHash("sha256").update(JSON.stringify([server, type, source])).digest("hex");
+    const renderLocally = Object.hasOwn(local, type) ? local[type] : null;
+    const key = createHash("sha256")
+      .update(
+        JSON.stringify(
+          renderLocally ? ["local", renderLocally.executable || type, print, type, source] : [server, type, source],
+        ),
+      )
+      .digest("hex");
     const cached = cache.get(key);
     if (cached) {
       return cached;
     }
     if (!inflight.has(key)) {
-      const request = requestDiagram({ server, type, source, timeoutMs, fetchImpl })
+      const drawing = renderLocally
+        ? renderLocally(source, { print })
+        : requestDiagram({ server, type, source, timeoutMs, fetchImpl });
+      const request = drawing
         .then((svg) => {
           cache.set(key, svg);
           return svg;

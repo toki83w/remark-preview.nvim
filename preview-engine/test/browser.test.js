@@ -370,3 +370,56 @@ test("a diagram can be panned and zoomed, and keeps its view across live updates
     tmp.cleanup();
   }
 });
+
+test("diagrams drawn by the real local tools have a visible size in the page", { timeout: 90000 }, async (t) => {
+  const { createLocalRenderers } = await import("../local-diagrams.js");
+  const local = createLocalRenderers();
+  if (!local.mermaid && !local.plantuml) {
+    t.skip("neither merman-cli nor plantuml is installed");
+    return;
+  }
+  const browser = await launch();
+  if (!browser) {
+    t.skip("Chrome/puppeteer not available");
+    return;
+  }
+
+  const tmp = tempDir();
+  const doc = join(tmp.dir, "local.md");
+  writeFileSync(
+    doc,
+    "# Local\n\n```mermaid\ngraph TD; A[Edit]-->B{Save?}\n```\n\n```plantuml\n@startuml\nAlice -> Bob: hi\n@enduml\n```\n",
+  );
+  // no Kroki server: whatever is drawn here was drawn by the tools
+  const app = createPreviewServer({ kroki: { server: "http://127.0.0.1:1", local } });
+  await app.listen(0);
+
+  try {
+    const info = await app.open(doc);
+    const page = await browser.newPage();
+    await page.setViewport({ width: 900, height: 900 });
+    await page.setRequestInterception(true);
+    page.on("request", (req) => (new URL(req.url()).hostname === "127.0.0.1" ? req.continue() : req.abort()));
+    await page.goto(info.url, { waitUntil: "load" });
+    await page.waitForFunction(() => document.getElementById("rp-status").className === "connected");
+
+    const frames = await page.evaluate(() =>
+      [...document.querySelectorAll(".rp-diagram")].map((frame) => {
+        const img = frame.querySelector("img");
+        const box = img.getBoundingClientRect();
+        return { alt: img.alt, natural: img.naturalWidth, width: box.width, height: box.height };
+      }),
+    );
+    const expected = ["mermaid", "plantuml"].filter((type) => local[type]);
+    assert.deepEqual(frames.map((f) => f.alt), expected);
+    for (const frame of frames) {
+      assert.ok(frame.natural > 0, `${frame.alt}: the image did not load`);
+      assert.ok(frame.width > 40 && frame.height > 40, `${frame.alt} is drawn ${frame.width}x${frame.height}: invisible`);
+    }
+    assert.equal(await page.evaluate(() => document.getElementById("rp-error").hidden), true, "no diagram may be reported as failed");
+  } finally {
+    await browser.close();
+    await app.shutdown();
+    tmp.cleanup();
+  }
+});

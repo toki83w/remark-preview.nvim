@@ -11,6 +11,7 @@ local ENGINE_FILES = {
     "preview-server.js",
     "pipeline.js",
     "shell.js",
+    "local-diagrams.js",
     "export.js",
     "preview.css",
     "print.css",
@@ -147,6 +148,39 @@ local function check_export()
     end
 end
 
+-- The tools that can draw diagrams on this machine (see preview-engine/local-diagrams.js).
+local LOCAL_DIAGRAM_TOOLS = {
+    { type = "mermaid", command = "merman-cli" },
+    { type = "plantuml", command = "plantuml" },
+}
+
+local function check_diagrams()
+    vim.health.start("Diagrams")
+    local options = require("remark-preview.config").options
+
+    if not options.local_diagrams then
+        vim.health.info("local diagram tools are switched off (local_diagrams = false): every diagram goes to Kroki")
+    end
+    for _, tool in ipairs(LOCAL_DIAGRAM_TOOLS) do
+        local found = vim.fn.exepath(tool.command)
+        if options.local_diagrams and found ~= "" then
+            vim.health.ok(string.format("%s: drawn locally by %s (%s)", tool.type, tool.command, found))
+        elseif found ~= "" then
+            vim.health.info(string.format("%s: %s is installed but not used", tool.type, tool.command))
+        else
+            vim.health.info(
+                string.format(
+                    "%s: %s not found, drawn by the Kroki server (%s)",
+                    tool.type,
+                    tool.command,
+                    options.kroki.server
+                )
+            )
+        end
+    end
+    vim.health.info("every other diagram type is drawn by the Kroki server: " .. options.kroki.server)
+end
+
 local function check_configuration()
     vim.health.start("Configuration")
     local options = require("remark-preview.config").options
@@ -155,6 +189,7 @@ local function check_configuration()
     vim.health.info("root markers: " .. table.concat(options.root_markers, ", "))
     vim.health.info("wikilinks: " .. tostring(options.wikilinks))
     vim.health.info("Kroki server: " .. options.kroki.server .. " (diagram sources are sent to it)")
+    vim.health.info("local diagram tools: " .. tostring(options.local_diagrams))
     vim.health.info("follow the cursor: " .. tostring(options.sync_on_cursor))
 end
 
@@ -165,6 +200,7 @@ function M.check()
         check_packages()
         check_export()
     end
+    check_diagrams()
     check_configuration()
 end
 

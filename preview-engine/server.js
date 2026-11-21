@@ -20,10 +20,13 @@
 // Environment: PREVIEW_THEME (default "dark"), PREVIEW_PORT (default: any free port),
 // PREVIEW_ROOT_MARKERS (JSON list of files/directories marking a project root, default [".obsidian", ".git"]),
 // PREVIEW_KROKI_SERVER (Kroki server drawing the diagrams, default https://kroki.io),
+// PREVIEW_LOCAL_DIAGRAMS ("false" turns off the local tools; by default mermaid is drawn by `merman-cli` and
+// plantuml by `plantuml` when they are on the PATH, and only the other diagram types go to Kroki),
 // PREVIEW_WIKILINKS ("auto" (default), "true" or "false": Obsidian [[wikilinks]]).
 // The process exits when stdin is closed (e.g. Neovim died).
 import { createInterface } from "node:readline";
 import { createPreviewServer } from "./preview-server.js";
+import { krokiFromEnv } from "./pipeline.js";
 
 function rootMarkersFromEnv() {
   try {
@@ -37,7 +40,7 @@ function rootMarkersFromEnv() {
 const app = createPreviewServer({
   theme: process.env.PREVIEW_THEME || "dark",
   rootMarkers: rootMarkersFromEnv(),
-  kroki: process.env.PREVIEW_KROKI_SERVER ? { server: process.env.PREVIEW_KROKI_SERVER } : undefined,
+  kroki: krokiFromEnv(),
   wikilinks: process.env.PREVIEW_WIKILINKS || "auto",
 });
 

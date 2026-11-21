@@ -23,6 +23,7 @@ local function stand_in(dir)
         "    name = vim.api.nvim_buf_get_name(buf),",
         "    theme = config.options.theme,",
         "    follow = config.options.sync_on_cursor,",
+        "    local_diagrams = config.options.local_diagrams,",
         "    opened = _G.__opened,",
         "    notes = _G.__notes,",
         "    user_config = vim.g.user_config_loaded,",
@@ -108,6 +109,17 @@ tests["--theme and --follow reach the plugin"] = function()
     assert(equals.theme == "light")
 end
 
+tests["--local-diagrams turns the local tools on or off, on is the default"] = function()
+    local _, default = launch({})
+    assert(default.local_diagrams == true, vim.inspect(default))
+    local _, off = launch({ "--local-diagrams", "off" })
+    assert(off.local_diagrams == false, vim.inspect(off))
+    local _, on = launch({ "-l", "on" })
+    assert(on.local_diagrams == true, vim.inspect(on))
+    local _, equals = launch({ "--local-diagrams=off" })
+    assert(equals.local_diagrams == false, vim.inspect(equals))
+end
+
 tests["--no-browser shows the URL instead of opening a browser"] = function()
     local result, report = launch({ "--no-browser" })
     assert(result.code == 0 and report)
@@ -141,6 +153,8 @@ tests["mistakes in the command line are reported and nothing is started"] = func
     local cases = {
         { { "--theme", "blue" }, "unknown theme" },
         { { "--theme" }, "needs a value" },
+        { { "--local-diagrams", "maybe" }, "use on or off" },
+        { { "--local-diagrams" }, "needs a value" },
         { { "--bogus" }, "unknown option" },
         { { "a.md", "b.md" }, "only one file" },
         { { "/nonexistent/x.md" }, "no such file" },

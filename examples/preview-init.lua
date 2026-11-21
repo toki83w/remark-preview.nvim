@@ -2,6 +2,8 @@
 -- Settings come from environment variables, so that no value is ever pasted into code:
 --   REMARK_PREVIEW_ROOT        the checkout (default: the parent of this directory)
 --   REMARK_PREVIEW_THEME       "dark" or "light"
+--   REMARK_PREVIEW_LOCAL_DIAGRAMS  "on" (default): mermaid and plantuml are drawn by merman-cli and plantuml
+--                              when installed; "off": every diagram is drawn by the Kroki server
 --   REMARK_PREVIEW_FOLLOW      "1": the browser follows the cursor
 --   REMARK_PREVIEW_NO_BROWSER  "1": show the URL instead of opening a browser
 -- You can copy this file as a starting point for your own configuration.
@@ -17,6 +19,7 @@ end
 
 require("remark-preview").setup({
     theme = vim.env.REMARK_PREVIEW_THEME or "dark",
+    local_diagrams = vim.env.REMARK_PREVIEW_LOCAL_DIAGRAMS ~= "off",
     sync_on_cursor = vim.env.REMARK_PREVIEW_FOLLOW == "1",
 })
 

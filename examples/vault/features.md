@@ -259,9 +259,13 @@ Important look alike, as do Warning and Caution). The two foldable ones react to
 
 ## Diagrams
 
-Diagrams are drawn by a Kroki server (`https://kroki.io` unless you set `kroki.server`). They need
-internet access, and the source of each diagram is sent to that server. If it cannot be reached, a
-placeholder appears and a yellow banner at the top of the page tells you why.
+Mermaid and PlantUML diagrams are drawn on your machine when `merman-cli` and `plantuml` are installed (see
+`:checkhealth remark-preview`): no internet is needed and the source stays local. Every other diagram
+(Graphviz, nomnoml, ...), and those two when their tool is missing or `local_diagrams = false`, is drawn
+by a Kroki server (`https://kroki.io` unless you set `kroki.server`); that needs internet access and the
+source of each diagram is sent to the server. If a diagram cannot be drawn (Kroki unreachable, or a syntax
+error reported by a local tool) a placeholder appears and a yellow banner at the top of the page tells
+you why; a diagram a local tool rejects is not sent to Kroki instead.
 
 Every diagram sits in a frame you can pan and zoom: drag to move it, hold Ctrl and use the wheel (or
 pinch on a trackpad) to zoom, or use the − ⟲ + buttons at the bottom right of the frame. Double-click or

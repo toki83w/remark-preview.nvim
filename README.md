@@ -12,7 +12,7 @@ A high-performance, highly customizable Markdown previewer for Neovim that utili
 *   **Extended Math Support**:
     *   Standard LaTeX via `$...$` and `$$...$$`.
     *   **Ampersand Math**: Use `&...&` for inline and `&&...&&` for block **AsciiMath** (powered by KaTeX and rehype-asciimath).
-*   **Diagrams (Kroki)**: Native support for Mermaid, PlantUML, Graphviz, and more, cached between renders. Each diagram sits in a frame you can pan (drag), zoom (Ctrl+wheel, pinch or the − ⟲ + buttons) and resize (drag its bottom-right corner); the view and size survive saves. Transparent diagrams are automatically wrapped in high-contrast backgrounds for dark mode visibility.
+*   **Diagrams**: Mermaid, PlantUML, Graphviz, and more, cached between renders. Mermaid and PlantUML are drawn on your machine, offline, when `merman-cli` and `plantuml` are installed; everything else (and those two when the tool is missing) is drawn by a Kroki server. Each diagram sits in a frame you can pan (drag), zoom (Ctrl+wheel, pinch or the − ⟲ + buttons) and resize (drag its bottom-right corner); the view and size survive saves. Transparent diagrams are automatically wrapped in high-contrast backgrounds for dark mode visibility.
 *   **Advanced Task Lists**:
     *   Standard GFM `[ ]` and `[x]`.
     *   **Custom Markers**: Support for `[!]` (Important), `[?]` (Question), and `[>]` (Ongoing) with unique Nerd Font icons.
@@ -33,6 +33,9 @@ Before installing, ensure you have the following installed on your system:
 *   **Node.js 20** or newer, and **npm** (bundled with Node.js)
 *   **Nerd Fonts**: Required for viewing custom task icons correctly.
 *   **Chrome**, only for the PDF export: `npm install` lets puppeteer download one.
+*   **Optional, to draw diagrams offline** (without them Kroki draws them, see "Security and privacy"):
+    *   [`merman-cli`](https://github.com/Latias94/merman) for Mermaid: download a release binary and put it on your `PATH`, or `cargo install merman-cli`.
+    *   [`plantuml`](https://plantuml.com) for PlantUML (needs Java).
 
 ## 📦 Installation
 
@@ -144,8 +147,9 @@ require("remark-preview").setup({
   root_markers = { ".obsidian", ".git" }, -- what marks the project root
   wikilinks = "auto",      -- Obsidian [[links]]: "auto" (inside a vault), true or false
   kroki = {
-    server = "https://kroki.io", -- draws the diagrams, see "Security"
+    server = "https://kroki.io", -- draws the diagrams no local tool draws, see "Security"
   },
+  local_diagrams = true,   -- draw mermaid with `merman-cli` and plantuml with `plantuml` when they are on the PATH; false: always Kroki
   pdf = {
     format = "A4",
     margin = "1cm",
@@ -160,7 +164,8 @@ require("remark-preview").setup({
 *   The preview server listens on `127.0.0.1` only and rejects requests whose `Host` header is not its own (DNS rebinding). The URL that opens the preview carries a random token that the server exchanges for a cookie; requests without it are refused. The token is visible in the command line of the browser launcher for a moment, which matters on shared machines.
 *   Files are served only from the project root, only media types, never hidden files, and symbolic links that lead out of the root are refused.
 *   **Raw HTML in a document runs in the preview page**, as on GitHub's wiki or a local HTML file. Preview documents you do not trust at your own risk.
-*   **The source of every diagram is sent to the Kroki server** (`https://kroki.io` by default). Point `kroki.server` at a self-hosted instance for private documents.
+*   **Diagrams are drawn locally when they can be.** With `merman-cli` (mermaid) and `plantuml` (plantuml) on your `PATH`, those diagrams are drawn on your machine: nothing is sent anywhere and no internet is needed. The source of **every other diagram** (graphviz, ... and mermaid or plantuml when their tool is missing) **is sent to the Kroki server** (`https://kroki.io` by default); point `kroki.server` at a self-hosted instance for private documents, or see which tool draws what with `:checkhealth remark-preview`. When a local tool fails (a syntax error) the diagram shows the error, and its source is **not** sent to Kroki as a second attempt.
+*   The local tools run on the document you preview, with a time limit (30 s) and a cap on parallel runs. PlantUML runs in its `SANDBOX` security profile, so a document cannot `!include` your files or read them; its standard library still works. Only `merman-cli` and `plantuml` are ever run, found on the `PATH`; set `local_diagrams = false` to turn them off.
 *   The page loads its stylesheets for math, code and theming from CDNs, so the preview needs internet access for those. The PDF export needs it for the math styling too.
 *   Chrome is started with `--no-sandbox` for the PDF export, which is needed in many containers.
 
@@ -175,7 +180,7 @@ stylua .                            # formatting
 
 `node preview-engine/render-cli.js file.md` prints the HTML of a file, and `node preview-engine/export-cli.js file.md out.pdf` exports it without Neovim.
 
-`examples/vault/features.md` is a reference document that uses every feature and says what to expect; `preview-engine/test/reference.test.js` keeps it honest. `examples/preview.sh` opens it (or any Markdown file) in Neovim with this checkout of the plugin and your own configuration left out, and starts the preview in the browser: `examples/preview.sh --help` lists the options.
+`examples/vault/features.md` is a reference document that uses every feature and says what to expect; `preview-engine/test/reference.test.js` keeps it honest. `examples/preview.sh` opens it (or any Markdown file) in Neovim with this checkout of the plugin and your own configuration left out, and starts the preview in the browser: `examples/preview.sh --help` lists the options. `examples/export.sh` turns it (or any Markdown file) into a PDF without Neovim and prints the path: `examples/export.sh --help` lists the options.
 
 ## 📄 License
 

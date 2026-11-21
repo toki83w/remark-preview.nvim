@@ -21,6 +21,7 @@ import remarkSubSuper from "./remark-sub-super.js";
 import remarkWikilinks from "./remark-wikilinks.js";
 import { remarkMark } from "remark-mark-highlight";
 import { toString } from "hast-util-to-string";
+import { createLocalRenderers } from "./local-diagrams.js";
 import { unified } from "unified";
 import { visit } from "unist-util-visit";
 import { VFile } from "vfile";
@@ -32,6 +33,28 @@ export const DEFAULT_KROKI_SERVER = "https://kroki.io";
 // Options of the diagram plugin when the caller gives none. One shared object: processors are
 // cached by the identity of this object.
 const DEFAULT_KROKI = Object.freeze({});
+
+/**
+ * The diagram options the command line tools and the preview server use, from the environment:
+ * PREVIEW_KROKI_SERVER (the Kroki server) and PREVIEW_LOCAL_DIAGRAMS ("false" turns off the local
+ * tools; otherwise merman-cli and plantuml are used for mermaid and plantuml when they are on the PATH).
+ * Create it once and reuse it: processors are cached by the identity of the object.
+ *
+ * @returns {{ server?: string, local?: object } | undefined} undefined: the defaults
+ */
+export function krokiFromEnv(env = process.env) {
+  const options = {};
+  if (env.PREVIEW_KROKI_SERVER) {
+    options.server = env.PREVIEW_KROKI_SERVER;
+  }
+  if (env.PREVIEW_LOCAL_DIAGRAMS !== "false") {
+    const local = createLocalRenderers();
+    if (Object.keys(local).length > 0) {
+      options.local = local;
+    }
+  }
+  return Object.keys(options).length > 0 ? options : undefined;
+}
 
 // Drops the YAML/TOML frontmatter nodes from the tree.
 function removeFrontmatter() {
@@ -71,7 +94,10 @@ export function bodyPlugins({ theme = "dark", kroki = {} } = {}) {
   // before the math plugins: they would split the text of a link such as [[A & B]]
   plugins.push(remarkWikilinks, remarkAmpersandMath, remarkMath);
   if (kroki) {
-    plugins.push([remarkKrokiCache, { ...kroki, server: kroki.server || DEFAULT_KROKI_SERVER, alias: KROKI_ALIASES }]);
+    plugins.push([
+      remarkKrokiCache,
+      { ...kroki, server: kroki.server || DEFAULT_KROKI_SERVER, alias: KROKI_ALIASES, print: theme === "print" },
+    ]);
   }
   plugins.push(remarkMark, remarkSubSuper);
   plugins.push([

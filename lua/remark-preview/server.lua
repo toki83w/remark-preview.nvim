@@ -183,6 +183,7 @@ function M.start(callback)
             PREVIEW_PORT = tostring(config.options.port),
             PREVIEW_ROOT_MARKERS = vim.json.encode(config.options.root_markers),
             PREVIEW_KROKI_SERVER = config.options.kroki.server,
+            PREVIEW_LOCAL_DIAGRAMS = tostring(config.options.local_diagrams),
             PREVIEW_WIKILINKS = tostring(config.options.wikilinks),
         },
         on_stdout = on_stdout,

@@ -227,11 +227,44 @@ end
 tests["kroki.server from the configuration reaches the server and failures are shown"] = function()
     local dir = H.tmpdir()
     H.write(dir .. "/d.md", { "# Diagram", "", "```mermaid", "graph TD; A-->B", "```" })
-    -- nothing listens on port 1: the diagram cannot be drawn, which must be reported, not hidden
-    config.setup({ kroki = { server = "http://127.0.0.1:1" } })
+    -- nothing listens on port 1: the diagram cannot be drawn, which must be reported, not hidden.
+    -- The local tools are off, or merman-cli (when installed) would draw this mermaid diagram offline.
+    config.setup({ kroki = { server = "http://127.0.0.1:1" }, local_diagrams = false })
     local page = page_of(dir .. "/d.md", dir)
     assert(page:find('class="warning"', 1, true), "a failing diagram must show the warning banner")
     assert(page:find("cannot reach the Kroki server", 1, true), "the reason must be shown")
+end
+
+tests["local_diagrams: mermaid and plantuml are drawn by the installed tools without any Kroki server"] = function()
+    if vim.fn.executable("merman-cli") ~= 1 or vim.fn.executable("plantuml") ~= 1 then
+        print("       (skipped: merman-cli and plantuml are not both installed)")
+        return
+    end
+    local dir = H.tmpdir()
+    H.write(dir .. "/d.md", {
+        "# Diagrams",
+        "",
+        "```mermaid",
+        "graph TD; A-->B",
+        "```",
+        "",
+        "```plantuml",
+        "@startuml",
+        "Alice -> Bob: hi",
+        "@enduml",
+        "```",
+        "",
+        "```graphviz",
+        "digraph G {a->b}",
+        "```",
+    })
+    -- nothing listens on port 1: only the graphviz diagram (no local tool) can fail
+    config.setup({ kroki = { server = "http://127.0.0.1:1" } })
+    local page = page_of(dir .. "/d.md", dir)
+    local banner = (page:match('<div id="rp%-error"[^>]*>(.-)</div>') or ""):gsub("&quot;", '"')
+    assert(banner:find('Diagram "graphviz"', 1, true), "graphviz needs Kroki, which is unreachable: " .. banner)
+    assert(not banner:find('Diagram "mermaid"', 1, true), "mermaid must be drawn locally: " .. banner)
+    assert(not banner:find('Diagram "plantuml"', 1, true), "plantuml must be drawn locally: " .. banner)
 end
 
 -- A vault (a directory with .obsidian) whose note links to another note and an attachment.

@@ -16,6 +16,11 @@ M.defaults = {
         -- diagram is sent to it: point this at a self-hosted instance to keep your documents private.
         server = "https://kroki.io",
     },
+    -- Use the diagram tools installed on this machine when they are found on the PATH: `merman-cli`
+    -- draws mermaid and `plantuml` draws plantuml, so those sources stay local and need no internet.
+    -- Every other diagram type, and any type whose tool is missing, goes to the Kroki server.
+    -- false: always Kroki.
+    local_diagrams = true,
     pdf = {
         format = "A4",
         margin = "1cm",
@@ -57,6 +62,13 @@ function M.setup(opts)
     end
 
     merged.sync_on_cursor = merged.sync_on_cursor == true
+
+    if type(merged.local_diagrams) ~= "boolean" then
+        vim.schedule(function()
+            vim.notify("remark-preview: `local_diagrams` must be true or false, using true", vim.log.levels.WARN)
+        end)
+        merged.local_diagrams = true
+    end
 
     if merged.wikilinks ~= "auto" and type(merged.wikilinks) ~= "boolean" then
         vim.schedule(function()

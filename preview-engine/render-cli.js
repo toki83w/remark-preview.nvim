@@ -1,13 +1,14 @@
 #!/usr/bin/env node
 // Renders a markdown file to an HTML fragment on stdout.
 //   node render-cli.js [--theme dark|light|print] [--no-kroki] file.md
+// Environment: PREVIEW_KROKI_SERVER, PREVIEW_LOCAL_DIAGRAMS ("false": do not use merman-cli and plantuml).
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { render } from "./pipeline.js";
+import { krokiFromEnv, render } from "./pipeline.js";
 
 const args = process.argv.slice(2);
 let theme = "dark";
-let kroki = {};
+let kroki = krokiFromEnv() ?? {};
 let input = null;
 
 for (let i = 0; i < args.length; i++) {

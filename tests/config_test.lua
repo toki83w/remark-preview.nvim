@@ -63,6 +63,17 @@ tests["sync_on_cursor is off by default and only true turns it on"] = function()
     assert(config.setup({ sync_on_cursor = "yes" }).sync_on_cursor == false)
 end
 
+tests["local_diagrams is on by default and must be a boolean"] = function()
+    local messages = H.capture_notify()
+    assert(config.setup(nil).local_diagrams == true)
+    assert(config.setup({ local_diagrams = false }).local_diagrams == false)
+    assert(config.setup({ local_diagrams = "no" }).local_diagrams == true)
+    H.wait(function()
+        return #messages >= 1
+    end, 1000)
+    assert(messages[1].msg:find("local_diagrams", 1, true))
+end
+
 tests["kroki.server defaults to kroki.io and can be pointed at a self-hosted instance"] = function()
     assert(config.setup(nil).kroki.server == "https://kroki.io")
     assert(config.setup({ kroki = { server = "http://localhost:8000/" } }).kroki.server == "http://localhost:8000/")

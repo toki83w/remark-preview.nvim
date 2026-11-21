@@ -97,11 +97,44 @@ tests["a missing node_modules stops the package checks with one clear error"] = 
     assert(#result.error == 1, "only the one error: " .. vim.inspect(result.error))
 end
 
+tests["the Diagrams section says which tool draws what, and that Kroki is the fallback"] = function()
+    local original = vim.fn.exepath
+    -- merman-cli is installed, plantuml is not
+    vim.fn.exepath = function(command)
+        return command == "merman-cli" and "/fake/bin/merman-cli" or ""
+    end
+    require("remark-preview.config").setup({})
+    local ok, result = pcall(run_check)
+    vim.fn.exepath = original
+    assert(ok, result)
+    assert(mentions(result.start, "Diagrams"), vim.inspect(result.start))
+    assert(mentions(result.ok, "mermaid: drawn locally by merman-cli (/fake/bin/merman-cli)"), vim.inspect(result.ok))
+    assert(mentions(result.info, "plantuml: plantuml not found, drawn by the Kroki server"), vim.inspect(result.info))
+    assert(#result.error == 0, vim.inspect(result.error))
+    H.restore()
+end
+
+tests["with local_diagrams off the tools are reported as unused"] = function()
+    local original = vim.fn.exepath
+    vim.fn.exepath = function(command)
+        return "/fake/bin/" .. command
+    end
+    require("remark-preview.config").setup({ local_diagrams = false })
+    local ok, result = pcall(run_check)
+    vim.fn.exepath = original
+    assert(ok, result)
+    assert(mentions(result.info, "switched off"), vim.inspect(result.info))
+    assert(mentions(result.info, "merman-cli is installed but not used"), vim.inspect(result.info))
+    assert(not mentions(result.ok, "drawn locally"), vim.inspect(result.ok))
+    H.restore()
+end
+
 tests["the configuration is shown"] = function()
     require("remark-preview.config").setup({ theme = "light" })
     local result = run_check()
     assert(mentions(result.info, "theme: light"))
     assert(mentions(result.info, "Kroki server: https://kroki.io"))
+    assert(mentions(result.info, "local diagram tools: true"))
     H.restore()
 end
 
