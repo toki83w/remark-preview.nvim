@@ -12,7 +12,7 @@ A high-performance, highly customizable Markdown previewer for Neovim that utili
 *   **Extended Math Support**:
     *   Standard LaTeX via `$...$` and `$$...$$`.
     *   **Ampersand Math**: Use `&...&` for inline and `&&...&&` for block **AsciiMath** (powered by KaTeX and rehype-asciimath).
-*   **Diagrams (Kroki)**: Native support for Mermaid, PlantUML, Graphviz, and more, cached between renders. Transparent diagrams are automatically wrapped in high-contrast backgrounds for dark mode visibility.
+*   **Diagrams (Kroki)**: Native support for Mermaid, PlantUML, Graphviz, and more, cached between renders. Each diagram sits in a frame you can pan (drag), zoom (Ctrl+wheel, pinch or the − ⟲ + buttons) and resize (drag its bottom-right corner); the view and size survive saves. Transparent diagrams are automatically wrapped in high-contrast backgrounds for dark mode visibility.
 *   **Advanced Task Lists**:
     *   Standard GFM `[ ]` and `[x]`.
     *   **Custom Markers**: Support for `[!]` (Important), `[?]` (Question), and `[>]` (Ongoing) with unique Nerd Font icons.

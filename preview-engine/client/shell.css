@@ -1,4 +1,11 @@
 html { scroll-behavior: smooth; }
+
+/* diagrams: a white box around the image (see rehype-kroki-img-bg.js); screen and print */
+.rp-diagram { display: inline-block; }
+.rp-diagram-viewport { display: block; padding: 8px; transform-origin: 0 0; }
+.rp-diagram-viewport img { display: block; }
+.rp-diagram-controls { display: none; }
+
 @media screen {
   :root { --sidebar-width: 260px; }
   body {
@@ -51,6 +58,29 @@ html { scroll-behavior: smooth; }
   }
   #rp-error[hidden] { display: none; }
   #rp-error.warning { background: var(--yellow, #df8e1d); }
+
+  /* diagram frame: drag to pan, Ctrl+wheel or the buttons to zoom (client.js) */
+  .rp-diagram {
+    position: relative; overflow: hidden; vertical-align: top;
+    max-width: 100%; max-height: 70vh; cursor: grab; touch-action: none; user-select: none;
+    resize: both; /* the corner handle: the browser stores the size in the style attribute */
+  }
+  /* once resized the size is the user's: no height cap, and a size that can still be grabbed */
+  .rp-diagram[style*="height"] { max-height: none; min-width: 160px; min-height: 100px; }
+  .rp-diagram.is-panning { cursor: grabbing; }
+  .rp-diagram-viewport { width: max-content; }
+  .rp-diagram-viewport img { max-width: none; -webkit-user-drag: none; }
+  .rp-diagram-controls {
+    display: flex; position: absolute; right: 22px; bottom: 8px; gap: 4px;
+    opacity: 0.35; transition: opacity 0.2s;
+  }
+  .rp-diagram:hover .rp-diagram-controls, .rp-diagram-controls:focus-within { opacity: 1; }
+  .rp-diagram-controls button {
+    width: 28px; height: 28px; padding: 0; cursor: pointer;
+    border: 1px solid var(--surface1, #888); border-radius: 6px;
+    background: var(--mantle, #eee); color: var(--text, #333); font: 1em/1 "Noto Sans", sans-serif;
+  }
+  .rp-diagram-controls button:hover { background: var(--surface0, #ddd); }
 
   /* references the preview refuses to serve or cannot find */
   img.rp-blocked, img.rp-missing {

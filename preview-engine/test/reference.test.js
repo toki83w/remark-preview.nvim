@@ -105,6 +105,8 @@ describe("reference document", () => {
     assert.equal(count(/data:image\/svg\+xml;base64/g), 5);
     assert.match(body, /alt="A diagram drawn with nomnoml"/);
     assert.equal(count(/alt="mermaid"/g), 2);
+    assert.equal(count(/class="rp-diagram"/g), 5, "every diagram is in a zoomable frame");
+    assert.equal(count(/<span class="rp-diagram-controls">/g), 5);
   });
 
   test("images: six reachable references, three refused ones", () => {

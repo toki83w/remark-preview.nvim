@@ -248,3 +248,125 @@ test("a diagram has a real height inside its stamped paragraph, and warnings sho
     tmp.cleanup();
   }
 });
+
+test("a diagram can be panned and zoomed, and keeps its view across live updates", { timeout: 90000 }, async (t) => {
+  const browser = await launch();
+  if (!browser) {
+    t.skip("Chrome/puppeteer not available");
+    return;
+  }
+
+  const tmp = tempDir();
+  const doc = join(tmp.dir, "zoom.md");
+  const source = (text) => `# Zoom\n\n${text}\n\n\`\`\`mermaid\ngraph TD; A-->B\n\`\`\`\n`;
+  writeFileSync(doc, source("first text"));
+  // a diagram bigger than the page, so that it has to be fitted
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="2000" height="1000"><rect width="2000" height="1000"/></svg>';
+  const app = createPreviewServer({ kroki: { fetch: async () => new Response(svg), cache: createKrokiCache() } });
+  await app.listen(0);
+
+  try {
+    const info = await app.open(doc);
+    const page = await browser.newPage();
+    await page.setViewport({ width: 1000, height: 800 });
+    await page.setRequestInterception(true);
+    page.on("request", (req) => (new URL(req.url()).hostname === "127.0.0.1" ? req.continue() : req.abort()));
+    await page.goto(info.url, { waitUntil: "load" });
+    await page.waitForFunction(() => document.getElementById("rp-status").className === "connected");
+
+    const view = () => page.evaluate(() => document.querySelector(".rp-diagram")._view);
+    const box = async () => {
+      const r = await page.evaluate(() => {
+        const b = document.querySelector(".rp-diagram").getBoundingClientRect();
+        return { x: b.x, y: b.y, w: b.width, h: b.height };
+      });
+      return { cx: r.x + r.w / 2, cy: r.y + r.h / 2, ...r };
+    };
+
+    // it starts fitted: smaller than the original size, and inside its frame
+    const start = await view();
+    assert.ok(start.s < 1 && start.s > 0, `expected a scale below 1, got ${start.s}`);
+    const frame = await box();
+    assert.ok(frame.w <= 1000, "the frame must not be wider than the page");
+
+    // a drag pans
+    await page.mouse.move(frame.cx, frame.cy);
+    await page.mouse.down();
+    await page.mouse.move(frame.cx + 40, frame.cy + 25, { steps: 4 });
+    await page.mouse.up();
+    const panned = await view();
+    assert.equal(Math.round(panned.x - start.x), 40);
+    assert.equal(Math.round(panned.y - start.y), 25);
+    assert.equal(panned.s, start.s);
+
+    // the plain wheel scrolls the page and does not zoom
+    await page.mouse.wheel({ deltaY: -100 });
+    assert.equal((await view()).s, start.s, "a plain wheel must not zoom");
+
+    // Ctrl+wheel zooms
+    await page.keyboard.down("Control");
+    await page.mouse.wheel({ deltaY: -100 });
+    await page.keyboard.up("Control");
+    assert.ok((await view()).s > start.s, "Ctrl+wheel must zoom in");
+
+    // the buttons zoom out and reset
+    await page.click('.rp-diagram-controls button[data-act="out"]');
+    const out = await view();
+    await page.click('.rp-diagram-controls button[data-act="in"]');
+    assert.ok((await view()).s > out.s);
+    await page.click('.rp-diagram-controls button[data-act="reset"]');
+    assert.deepEqual(await view(), start);
+
+    // the view survives a live update that does not touch the diagram
+    await page.mouse.move(frame.cx, frame.cy);
+    await page.mouse.down();
+    await page.mouse.move(frame.cx + 30, frame.cy, { steps: 3 });
+    await page.mouse.up();
+    const before = await view();
+    writeFileSync(doc, source("second text"));
+    await app.update(doc);
+    await page.waitForFunction(() => document.getElementById("content").textContent.includes("second text"));
+    assert.deepEqual(await view(), before, "the view must be kept");
+    assert.match(await page.evaluate(() => document.querySelector(".rp-diagram-viewport").style.transform), /translate\(/);
+
+    // the frame can be resized with the mouse (resize: both), and a save keeps the size
+    assert.equal(await page.evaluate(() => getComputedStyle(document.querySelector(".rp-diagram")).resize), "both");
+    // the browser writes the size as inline width and height when the corner is dragged
+    await page.evaluate(() => {
+      const f = document.querySelector(".rp-diagram");
+      f.style.width = "400px";
+      f.style.height = "300px";
+    });
+    const resized = await box();
+    assert.equal(Math.round(resized.w), 400);
+    assert.equal(Math.round(resized.h), 300, "the 70vh cap must not apply once resized");
+    const kept = await view();
+    writeFileSync(doc, source("third text"));
+    await app.update(doc);
+    await page.waitForFunction(() => document.getElementById("content").textContent.includes("third text"));
+    const after = await box();
+    assert.equal(Math.round(after.w), 400, "the width must be kept on update");
+    assert.equal(Math.round(after.h), 300, "the height must be kept on update");
+    assert.deepEqual(await view(), kept, "resizing must not change the zoom and pan");
+
+    // a press in the resize corner starts no pan
+    await page.mouse.move(after.x + after.w - 6, after.y + after.h - 6);
+    await page.mouse.down();
+    await page.mouse.move(after.x + after.w - 30, after.y + after.h - 30, { steps: 3 });
+    await page.mouse.up();
+    assert.deepEqual(await view(), kept, "the corner must not pan");
+
+    // the print page has no script, and in print media the controls are hidden (as in the PDF)
+    const print = await browser.newPage();
+    await print.setRequestInterception(true);
+    print.on("request", (req) => (new URL(req.url()).hostname === "127.0.0.1" ? req.continue() : req.abort()));
+    await print.goto(info.url.replace(/\/(\?|$)/, "/print$1"), { waitUntil: "load" });
+    assert.equal(await print.evaluate(() => document.querySelectorAll("script").length), 0, "the print page runs no script");
+    await print.emulateMediaType("print");
+    assert.equal(await print.evaluate(() => getComputedStyle(document.querySelector(".rp-diagram-controls")).display), "none");
+  } finally {
+    await browser.close();
+    await app.shutdown();
+    tmp.cleanup();
+  }
+});

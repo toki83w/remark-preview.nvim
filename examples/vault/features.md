@@ -263,6 +263,10 @@ Diagrams are drawn by a Kroki server (`https://kroki.io` unless you set `kroki.s
 internet access, and the source of each diagram is sent to that server. If it cannot be reached, a
 placeholder appears and a yellow banner at the top of the page tells you why.
 
+Every diagram sits in a frame you can pan and zoom: drag to move it, hold Ctrl and use the wheel (or
+pinch on a trackpad) to zoom, or use the − ⟲ + buttons at the bottom right of the frame. Double-click or
+⟲ fits it to the frame again. Drag the bottom-right corner of the frame to resize it (it can grow as tall as you like, and as wide as the page). The view and the size are kept when you save the file, and the PDF shows plain images.
+
 Mermaid flowchart:
 
 ```mermaid

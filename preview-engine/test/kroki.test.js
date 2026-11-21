@@ -70,9 +70,13 @@ describe("kroki plugin", () => {
     assert.deepEqual(kroki.calls, [{ method: "POST", url: "/mermaid/svg", type: "text/plain", body: "graph LR; X-->Y" }]);
   });
 
-  test("rehype-kroki-img-bg still wraps the image in a light box", async () => {
+  test("rehype-kroki-img-bg wraps the image in a light frame with zoom buttons", async () => {
     const { html } = await render(diagram(), options());
-    assert.match(html, /<span style="background:#fff;[^"]*"><img /);
+    assert.match(html, /<span class="rp-diagram" style="background:#fff;[^"]*"><span class="rp-diagram-viewport"><img /);
+    assert.match(html, /<span class="rp-diagram-controls"><button type="button" data-act="out" title="Zoom out"/);
+    for (const act of ["out", "reset", "in"]) {
+      assert.match(html, new RegExp(`data-act="${act}"`));
+    }
   });
 
   test("the image sits inside its paragraph: no block element inside a <p>", async () => {
@@ -82,7 +86,7 @@ describe("kroki plugin", () => {
 
   test("the source line of the block is kept for scroll sync", async () => {
     const { html } = await render("intro\n\n" + diagram(), options());
-    assert.match(html, /<p data-line="3" data-line-end="5"><span style="background:#fff;[^"]*"><img /);
+    assert.match(html, /<p data-line="3" data-line-end="5"><span class="rp-diagram" style="background:#fff;[^"]*"><span class="rp-diagram-viewport"><img /);
   });
 
   test("an identical diagram in a later render is served from the cache", async () => {

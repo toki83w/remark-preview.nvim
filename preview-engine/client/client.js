@@ -1,4 +1,4 @@
-// Browser-side client of the preview page: TOC sidebar, scroll spy and live updates.
+// Browser-side client of the preview page: TOC sidebar, scroll spy, diagram zoom and live updates.
 // Plain script (no modules): loaded by the page shell after morphdom.
 (function () {
   "use strict";
@@ -59,6 +59,113 @@
     });
   }
 
+  // ---------------------------------------------------------------- diagrams
+  // Zoom and pan of the diagram frames (see rehype-kroki-img-bg.js for the markup). The view of a
+  // frame is kept on the element, which morphdom keeps between updates; the handlers are on
+  // #content, so they need no rebinding. Drag pans, Ctrl+wheel (or a pinch) and the buttons zoom.
+  var MIN_SCALE = 0.1;
+  var MAX_SCALE = 6;
+
+  function viewportOf(frame) {
+    return frame.querySelector(".rp-diagram-viewport");
+  }
+
+  function applyView(frame) {
+    var v = frame._view;
+    viewportOf(frame).style.transform = "translate(" + v.x + "px, " + v.y + "px) scale(" + v.s + ")";
+  }
+
+  // Scales the diagram down to the frame if it is bigger (never up) and centers it.
+  function fitDiagram(frame) {
+    var viewport = viewportOf(frame);
+    var w = viewport.offsetWidth;
+    var h = viewport.offsetHeight;
+    var fw = frame.clientWidth;
+    var fh = frame.clientHeight;
+    var s = w > 0 && h > 0 ? Math.min(1, fw / w, fh / h) : 1;
+    frame._view = { s: s, x: (fw - w * s) / 2, y: 0 };
+    applyView(frame);
+  }
+
+  // Zooms by a factor keeping the point (ax, ay), relative to the frame, where it is.
+  function zoomDiagram(frame, factor, ax, ay) {
+    var v = frame._view || { s: 1, x: 0, y: 0 };
+    var s = Math.min(MAX_SCALE, Math.max(MIN_SCALE, v.s * factor));
+    frame._view = { s: s, x: ax - (ax - v.x) * (s / v.s), y: ay - (ay - v.y) * (s / v.s) };
+    applyView(frame);
+  }
+
+  // Frames that have no view yet (new on the page) and whose image is already loaded.
+  function fitNewDiagrams() {
+    content.querySelectorAll(".rp-diagram").forEach(function (frame) {
+      var img = frame.querySelector("img");
+      if (!frame._view && img && img.complete) fitDiagram(frame);
+    });
+  }
+
+  // A (re)loaded image starts fully visible; this also covers an image that changed in an update.
+  content.addEventListener(
+    "load",
+    function (e) {
+      var frame = e.target.closest && e.target.closest(".rp-diagram");
+      if (frame) fitDiagram(frame);
+    },
+    true
+  );
+
+  content.addEventListener(
+    "wheel",
+    function (e) {
+      var frame = e.target.closest(".rp-diagram");
+      // Ctrl+wheel, and a trackpad pinch which browsers report the same way; a plain wheel scrolls
+      if (!frame || !e.ctrlKey || !frame._view) return;
+      e.preventDefault();
+      var rect = frame.getBoundingClientRect();
+      zoomDiagram(frame, e.deltaY < 0 ? 1.1 : 0.9, e.clientX - rect.left, e.clientY - rect.top);
+    },
+    { passive: false }
+  );
+
+  var drag = null;
+  var HANDLE = 18; // px of the bottom-right corner left to the browser's resize handle
+  content.addEventListener("pointerdown", function (e) {
+    var frame = e.target.closest(".rp-diagram");
+    if (!frame || e.button !== 0 || e.target.closest(".rp-diagram-controls") || !frame._view) return;
+    var rect = frame.getBoundingClientRect();
+    if (e.clientX > rect.right - HANDLE && e.clientY > rect.bottom - HANDLE) return;
+    drag = { frame: frame, id: e.pointerId, x: e.clientX, y: e.clientY, view: frame._view };
+    frame.setPointerCapture(e.pointerId);
+    frame.classList.add("is-panning");
+    e.preventDefault();
+  });
+  content.addEventListener("pointermove", function (e) {
+    if (!drag || e.pointerId !== drag.id) return;
+    drag.frame._view = { s: drag.view.s, x: drag.view.x + e.clientX - drag.x, y: drag.view.y + e.clientY - drag.y };
+    applyView(drag.frame);
+  });
+  function endDrag(e) {
+    if (!drag || e.pointerId !== drag.id) return;
+    drag.frame.classList.remove("is-panning");
+    drag = null;
+  }
+  content.addEventListener("pointerup", endDrag);
+  content.addEventListener("pointercancel", endDrag);
+
+  content.addEventListener("dblclick", function (e) {
+    var frame = e.target.closest(".rp-diagram");
+    if (frame && !e.target.closest(".rp-diagram-controls")) fitDiagram(frame);
+  });
+
+  content.addEventListener("click", function (e) {
+    var btn = e.target.closest(".rp-diagram-controls button");
+    if (!btn) return;
+    var frame = btn.closest(".rp-diagram");
+    var act = btn.getAttribute("data-act");
+    if (act === "reset") return fitDiagram(frame);
+    if (!frame._view) fitDiagram(frame);
+    zoomDiagram(frame, act === "in" ? 1.2 : 1 / 1.2, frame.clientWidth / 2, frame.clientHeight / 2);
+  });
+
   // ---------------------------------------------------------------- updates
   // A banner on top of the page: an error (the render failed, the last good one is shown) or a
   // warning (the render worked but, for example, a diagram could not be drawn).
@@ -84,10 +191,25 @@
     var y = window.scrollY;
     var next = document.createElement("div");
     next.innerHTML = data.html;
-    morphdom(content, next, { childrenOnly: true });
+    morphdom(content, next, {
+      childrenOnly: true,
+      onBeforeElUpdated: function (from, to) {
+        // the zoom and pan of a diagram live in its style, and so does the size the user gave the
+        // frame: the new markup has neither
+        if (from.classList.contains("rp-diagram-viewport") && from.hasAttribute("style")) {
+          to.setAttribute("style", from.getAttribute("style"));
+        }
+        if (from.classList.contains("rp-diagram") && from.style.height) {
+          to.style.width = from.style.width;
+          to.style.height = from.style.height;
+        }
+        return true;
+      },
+    });
     if (data.title) document.title = data.title;
     version = data.version;
     buildSidebar();
+    fitNewDiagrams();
     if (data.warnings && data.warnings.length > 0) {
       showBanner(data.warnings.join("\n"), true);
     } else {
@@ -149,5 +271,6 @@
   }
 
   buildSidebar();
+  fitNewDiagrams();
   connect();
 })();

@@ -150,7 +150,16 @@ export default function remarkKrokiCache({
         }
         Object.assign(node, {
           type: "paragraph",
-          children: [{ type: "image", _meta: { kroki: true, type }, alt: alt || type, url: toDataUrl(svg) }],
+          children: [
+            {
+              type: "image",
+              _meta: { kroki: true, type },
+              alt: alt || type,
+              url: toDataUrl(svg),
+              // becomes data-kroki on the <img>: rehype-kroki-img-bg frames every diagram by it
+              data: { hProperties: { dataKroki: type } },
+            },
+          ],
           position,
         });
       }),
