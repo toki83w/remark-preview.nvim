@@ -1,0 +1,58 @@
+/* Shared by the github-light and github-dark themes: GitHub's own look (github-markdown-css, applied
+   through the markdown-body class of #content) with only the few additions the plugin needs. */
+
+body {
+  background-color: var(--base) !important;
+  color: var(--text) !important;
+}
+
+#content.markdown-body {
+  box-sizing: border-box;
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 32px 45px;
+  background-color: transparent;
+}
+
+.markdown-body mark {
+  background-color: var(--mark);
+  color: inherit;
+}
+
+/* highlight.js: let the code block keep GitHub's own background */
+.markdown-body pre code.hljs,
+.markdown-body code.hljs {
+  background: transparent;
+  padding: 0;
+}
+
+/* custom task markers: [!] [?] [>] get an icon in place of the checkbox */
+.markdown-body .custom-task input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  pointer-events: none;
+  width: 1em;
+  height: 1em;
+  border: none;
+  background: transparent;
+}
+.markdown-body .custom-task input[type="checkbox"]:before {
+  color: var(--text);
+}
+.markdown-body .task-important input[type="checkbox"]:before {
+  content: "\f071  ";
+  color: var(--red);
+}
+.markdown-body .task-question input[type="checkbox"]:before {
+  content: "\f059  ";
+  color: var(--yellow);
+}
+.markdown-body .task-ongoing input[type="checkbox"]:before {
+  content: "\f144  ";
+  color: var(--blue);
+}
+
+/* callouts: a callout is wider than its text, as on GitHub */
+.callout {
+  width: auto;
+}

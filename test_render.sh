@@ -1,6 +1,6 @@
 #!/bin/bash
 # Renders test.md (not under revision control) to an HTML fragment in test.html.
-# Usage: ./test_render.sh [dark|light|print]
+# Usage: ./test_render.sh [dark|light|github-dark|github-light|print]
 
 REPO_ROOT=$PWD
 INPUT_MD="$REPO_ROOT/test.md"

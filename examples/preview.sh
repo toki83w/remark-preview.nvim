@@ -5,7 +5,7 @@
 # Usage: examples/preview.sh [options] [file.md]
 #
 #   file.md             the document to open (default: examples/vault/features.md, the reference)
-#   -t, --theme THEME   colour theme: dark (default) or light
+#   -t, --theme THEME   colour theme: dark (default), light, github-dark or github-light
 #   -l, --local-diagrams on|off
 #                       draw mermaid and plantuml with the merman-cli and plantuml installed here (on, the
 #                       default), or always with the Kroki server (off); see :checkhealth remark-preview
@@ -36,7 +36,7 @@ FILE=""
 while [ $# -gt 0 ]; do
     case "$1" in
         -t | --theme)
-            [ $# -ge 2 ] || die "$1 needs a value: dark or light"
+            [ $# -ge 2 ] || die "$1 needs a value: dark, light, github-dark or github-light"
             THEME="$2"
             shift 2
             ;;
@@ -83,8 +83,8 @@ while [ $# -gt 0 ]; do
 done
 
 case "$THEME" in
-    dark | light) ;;
-    *) die "unknown theme \"$THEME\": use dark or light" ;;
+    dark | light | github-dark | github-light) ;;
+    *) die "unknown theme \"$THEME\": use dark, light, github-dark or github-light" ;;
 esac
 
 case "$LOCAL_DIAGRAMS" in

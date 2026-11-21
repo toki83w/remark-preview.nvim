@@ -1,0 +1,22 @@
+@import url("https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.8.1/github-markdown-light.min.css");
+@import url("https://unpkg.com/rehype-callouts/dist/themes/github/index.css");
+
+/* GitHub light: the names the shell stylesheet and github.css use */
+.github-light {
+  --base: #ffffff;
+  --mantle: #f6f8fa;
+  --crust: #ffffff;
+  --text: #1f2328;
+  --subtext0: #59636e;
+  --overlay0: #818b98;
+  --overlay1: #59636e;
+  --surface0: #d1d9e0;
+  --surface1: #d1d9e0;
+  --red: #d1242f;
+  --yellow: #9a6700;
+  --green: #1a7f37;
+  --blue: #0969da;
+  --blue-rgb: 9 105 218;
+  --mauve: #8250df;
+  --mark: #fff8c5;
+}

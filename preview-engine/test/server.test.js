@@ -3,6 +3,7 @@ import { spawn } from "node:child_process";
 import { once } from "node:events";
 import { rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { renderShell } from "../shell.js";
 import { after, before, describe, test } from "node:test";
 import { fileURLToPath } from "node:url";
 import { createInterface } from "node:readline";
@@ -55,6 +56,20 @@ describe("preview server", () => {
     assert.match(res.body, /<title>Doc A<\/title>/);
     assert.match(res.body, /data-version="1"/);
     assert.doesNotMatch(res.body, /<base/);
+  });
+
+  test("the github themes use github-markdown-css and the github highlight style", async () => {
+    for (const [theme, hljs] of [
+      ["github-dark", "github-dark.min.css"],
+      ["github-light", "styles/github.min.css"],
+    ]) {
+      const html = renderShell({ id: "x", theme, title: "t", html: "<p>hi</p>", version: 1 });
+      assert.match(html, new RegExp(`<body class="${theme}">`));
+      assert.match(html, /<div id="content" class="markdown-body">/);
+      assert.match(html, new RegExp(`\\.${theme} \\{`));
+      assert.ok(html.includes(hljs));
+      assert.doesNotMatch(html, /@scope \(\.dark\)/);
+    }
   });
 
   test("serves morphdom and the client script", async () => {

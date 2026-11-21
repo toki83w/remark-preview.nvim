@@ -18,7 +18,7 @@ A high-performance, highly customizable Markdown previewer for Neovim that utili
     *   **Custom Markers**: Support for `[!]` (Important), `[?]` (Question), and `[>]` (Ongoing) with unique Nerd Font icons.
 *   **Callouts & Alerts**: Support for GitHub-style alerts and Obsidian-style callouts (`[!NOTE]`, `[!WARNING]`, etc.).
 *   **Styling & Themes**:
-    *   Unified **Catppuccin** Mocha (Dark) and Latte (Light) themes.
+    *   Unified **Catppuccin** Mocha (Dark) and Latte (Light) themes, and plainer **GitHub** Dark and Light themes (`github-dark`, `github-light`) that look like GitHub renders Markdown.
     *   Automatic theme switching via configuration.
     *   Optimized **Print Theme** for B&W paper exports.
 *   **PDF export** with the print theme, including images and diagrams.
@@ -48,7 +48,7 @@ Before installing, ensure you have the following installed on your system:
     -- Automatically install/update npm dependencies
     build = "npm install --prefix preview-engine",
     opts = {
-        theme = "dark", -- "dark" (Mocha) or "light" (Latte)
+        theme = "dark", -- "dark" (Mocha), "light" (Latte), "github-dark" or "github-light"
         pdf = {
             format = "A4",
             margin = "1cm"
@@ -140,7 +140,7 @@ Not supported yet: embedding a note's content (`![[Note]]` is a link), `#tags`, 
 
 ```lua
 require("remark-preview").setup({
-  theme = "dark",          -- "dark" (Mocha) or "light" (Latte)
+  theme = "dark",          -- "dark" (Mocha), "light" (Latte), "github-dark" or "github-light"
   port = 0,                -- 0 lets the OS pick a free port
   debug = false,           -- print debug messages
   sync_on_cursor = false,  -- scroll the preview along with the cursor

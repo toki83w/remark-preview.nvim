@@ -1,7 +1,7 @@
 -- Neovim configuration used by examples/preview.sh: this checkout of the plugin and nothing else.
 -- Settings come from environment variables, so that no value is ever pasted into code:
 --   REMARK_PREVIEW_ROOT        the checkout (default: the parent of this directory)
---   REMARK_PREVIEW_THEME       "dark" or "light"
+--   REMARK_PREVIEW_THEME       "dark", "light", "github-dark" or "github-light"
 --   REMARK_PREVIEW_LOCAL_DIAGRAMS  "on" (default): mermaid and plantuml are drawn by merman-cli and plantuml
 --                              when installed; "off": every diagram is drawn by the Kroki server
 --   REMARK_PREVIEW_FOLLOW      "1": the browser follows the cursor

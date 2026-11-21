@@ -4,10 +4,16 @@ import { fileURLToPath } from "node:url";
 
 const engineDir = dirname(fileURLToPath(import.meta.url));
 
-const CSS_LINKS = [
-  "https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css",
-  "https://cdn.jsdelivr.net/npm/@catppuccin/highlightjs@1.0.1/css/catppuccin-mocha.css",
-];
+const HLJS_STYLES = "https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles";
+
+const isGithub = (theme) => theme === "github-light" || theme === "github-dark";
+
+function cssLinks(theme) {
+  const highlight = isGithub(theme)
+    ? `${HLJS_STYLES}/${theme === "github-dark" ? "github-dark" : "github"}.min.css`
+    : "https://cdn.jsdelivr.net/npm/@catppuccin/highlightjs@1.0.1/css/catppuccin-mocha.css";
+  return ["https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css", highlight];
+}
 
 const FALLBACK_CSS = 'body { font-family: "Noto Sans", sans-serif; background: #ff0000; }';
 
@@ -17,9 +23,12 @@ const cssCache = new Map();
 function loadCss(theme) {
   let css = cssCache.get(theme);
   if (css === undefined) {
-    const themeFile = theme === "print" ? "print.css" : "preview.css";
+    // @import rules must come first, so the github variant file leads and the shared rules follow
+    const themeFiles = isGithub(theme)
+      ? [`${theme}.css`, "github.css"]
+      : [theme === "print" ? "print.css" : "preview.css"];
     try {
-      css = readFileSync(join(engineDir, themeFile), "utf8");
+      css = themeFiles.map((file) => readFileSync(join(engineDir, file), "utf8")).join("\n");
     } catch {
       css = FALLBACK_CSS;
     }
@@ -55,7 +64,7 @@ export function renderShell({ id, theme, title, html, version, error = null, war
 <script src="/_/client.js" data-id="${escapeHtml(id)}" data-version="${Number(version)}"></script>
 `,
   };
-  const links = CSS_LINKS.map((href) => `<link rel="stylesheet" href="${href}">`).join("\n");
+  const links = cssLinks(theme).map((href) => `<link rel="stylesheet" href="${href}">`).join("\n");
   return `<!doctype html>
 <html lang="en" class="${cls}">
 <head>
@@ -68,7 +77,7 @@ ${loadCss(theme)}
 </style>
 </head>
 <body class="${cls}">
-${live ? liveParts.top : ""}<div id="content">
+${live ? liveParts.top : ""}<div id="content"${isGithub(theme) ? ' class="markdown-body"' : ""}>
 ${html}
 </div>
 ${live ? liveParts.scripts : ""}</body>

@@ -1,0 +1,30 @@
+@import url("https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.8.1/github-markdown-dark.min.css");
+@import url("https://unpkg.com/rehype-callouts/dist/themes/github/index.css");
+
+/* GitHub dark: the names the shell stylesheet and github.css use */
+.github-dark {
+  --base: #0d1117;
+  --mantle: #151b23;
+  --crust: #0d1117;
+  --text: #f0f6fc;
+  --subtext0: #9198a1;
+  --overlay0: #656c76;
+  --overlay1: #9198a1;
+  --surface0: #3d444d;
+  --surface1: #3d444d;
+  --red: #f85149;
+  --yellow: #d29922;
+  --green: #3fb950;
+  --blue: #4493f8;
+  --blue-rgb: 68 147 248;
+  --mauve: #ab7df8;
+  --mark: #bb800926;
+}
+
+/* the callout theme only knows a class called "dark" */
+.github-dark .callout {
+  border-left-color: var(--rc-color-dark, var(--rc-color-default));
+}
+.github-dark .callout-title {
+  color: var(--rc-color-dark, var(--rc-color-default));
+}

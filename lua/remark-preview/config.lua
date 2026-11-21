@@ -29,7 +29,7 @@ M.defaults = {
 
 M.options = vim.deepcopy(M.defaults)
 
-local THEMES = { dark = true, light = true }
+local THEMES = { dark = true, light = true, ["github-dark"] = true, ["github-light"] = true }
 
 function M.setup(opts)
     opts = vim.deepcopy(opts or {})
