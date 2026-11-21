@@ -2,6 +2,8 @@ html { scroll-behavior: smooth; }
 
 /* diagrams: a white box around the image (see rehype-kroki-img-bg.js); screen and print */
 .rp-diagram { display: inline-block; }
+/* a paragraph that holds a diagram frame centres it (the frame is an inline box) */
+p:has(> .rp-diagram) { text-align: center; }
 .rp-diagram-viewport { display: block; padding: 8px; transform-origin: 0 0; }
 .rp-diagram-viewport img { display: block; }
 .rp-diagram-controls { display: none; }
