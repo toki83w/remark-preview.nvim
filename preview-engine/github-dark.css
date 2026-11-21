@@ -1,24 +1,31 @@
+@import url("https://unpkg.com/@catppuccin/palette/css/catppuccin.css");
 @import url("https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.8.1/github-markdown-dark.min.css");
 @import url("https://unpkg.com/rehype-callouts/dist/themes/github/index.css");
 
-/* GitHub dark: the names the shell stylesheet and github.css use */
+/* GitHub's layout in the Catppuccin Mocha colours; github.css maps these names onto the rules */
 .github-dark {
-  --base: #0d1117;
-  --mantle: #151b23;
-  --crust: #0d1117;
-  --text: #f0f6fc;
-  --subtext0: #9198a1;
-  --overlay0: #656c76;
-  --overlay1: #9198a1;
-  --surface0: #3d444d;
-  --surface1: #3d444d;
-  --red: #f85149;
-  --yellow: #d29922;
-  --green: #3fb950;
-  --blue: #4493f8;
-  --blue-rgb: 68 147 248;
-  --mauve: #ab7df8;
-  --mark: #bb800926;
+  --base: var(--ctp-mocha-base);
+  --mantle: var(--ctp-mocha-mantle);
+  --crust: var(--ctp-mocha-crust);
+  --text: var(--ctp-mocha-text);
+  --subtext0: var(--ctp-mocha-subtext0);
+  --overlay0: var(--ctp-mocha-overlay0);
+  --overlay1: var(--ctp-mocha-overlay1);
+  --surface0: var(--ctp-mocha-surface0);
+  --surface1: var(--ctp-mocha-surface1);
+  --red: var(--ctp-mocha-red);
+  --yellow: var(--ctp-mocha-yellow);
+  --green: var(--ctp-mocha-green);
+  --blue: var(--ctp-mocha-blue);
+  --blue-rgb: var(--ctp-mocha-blue-rgb);
+  --mauve: var(--ctp-mocha-mauve);
+  --mark: rgb(var(--ctp-mocha-yellow-rgb) / 30%);
+
+  --callout-note-color-dark: var(--blue);
+  --callout-tip-color-dark: var(--green);
+  --callout-important-color-dark: var(--mauve);
+  --callout-warning-color-dark: var(--yellow);
+  --callout-caution-color-dark: var(--red);
 }
 
 /* the callout theme only knows a class called "dark" */

@@ -1,22 +1,29 @@
+@import url("https://unpkg.com/@catppuccin/palette/css/catppuccin.css");
 @import url("https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.8.1/github-markdown-light.min.css");
 @import url("https://unpkg.com/rehype-callouts/dist/themes/github/index.css");
 
-/* GitHub light: the names the shell stylesheet and github.css use */
+/* GitHub's layout in the Catppuccin Latte colours; github.css maps these names onto the rules */
 .github-light {
-  --base: #ffffff;
-  --mantle: #f6f8fa;
-  --crust: #ffffff;
-  --text: #1f2328;
-  --subtext0: #59636e;
-  --overlay0: #818b98;
-  --overlay1: #59636e;
-  --surface0: #d1d9e0;
-  --surface1: #d1d9e0;
-  --red: #d1242f;
-  --yellow: #9a6700;
-  --green: #1a7f37;
-  --blue: #0969da;
-  --blue-rgb: 9 105 218;
-  --mauve: #8250df;
-  --mark: #fff8c5;
+  --base: var(--ctp-latte-base);
+  --mantle: var(--ctp-latte-mantle);
+  --crust: var(--ctp-latte-crust);
+  --text: var(--ctp-latte-text);
+  --subtext0: var(--ctp-latte-subtext0);
+  --overlay0: var(--ctp-latte-overlay0);
+  --overlay1: var(--ctp-latte-overlay1);
+  --surface0: var(--ctp-latte-surface0);
+  --surface1: var(--ctp-latte-surface1);
+  --red: var(--ctp-latte-red);
+  --yellow: var(--ctp-latte-yellow);
+  --green: var(--ctp-latte-green);
+  --blue: var(--ctp-latte-blue);
+  --blue-rgb: var(--ctp-latte-blue-rgb);
+  --mauve: var(--ctp-latte-mauve);
+  --mark: rgb(var(--ctp-latte-yellow-rgb) / 35%);
+
+  --callout-note-color-light: var(--blue);
+  --callout-tip-color-light: var(--green);
+  --callout-important-color-light: var(--mauve);
+  --callout-warning-color-light: var(--yellow);
+  --callout-caution-color-light: var(--red);
 }

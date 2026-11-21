@@ -18,7 +18,7 @@ A high-performance, highly customizable Markdown previewer for Neovim that utili
     *   **Custom Markers**: Support for `[!]` (Important), `[?]` (Question), and `[>]` (Ongoing) with unique Nerd Font icons.
 *   **Callouts & Alerts**: Support for GitHub-style alerts and Obsidian-style callouts (`[!NOTE]`, `[!WARNING]`, etc.).
 *   **Styling & Themes**:
-    *   Unified **Catppuccin** Mocha (Dark) and Latte (Light) themes, and plainer **GitHub** Dark and Light themes (`github-dark`, `github-light`) that look like GitHub renders Markdown.
+    *   Unified **Catppuccin** Mocha (Dark) and Latte (Light) themes, and plainer **GitHub** Dark and Light themes (`github-dark`, `github-light`) that lay out Markdown like GitHub does, in the same Mocha and Latte colours.
     *   Automatic theme switching via configuration, and a menu in the page (top right) to switch themes from the browser; the choice is remembered in a cookie for every document, and is never written to your Neovim configuration.
     *   Optimized **Print Theme** for B&W paper exports.
 *   **PDF export** with the print theme, including images and diagrams.

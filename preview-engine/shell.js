@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 
 const engineDir = dirname(fileURLToPath(import.meta.url));
 
-const HLJS_STYLES = "https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles";
+const HLJS_STYLES = "https://cdn.jsdelivr.net/npm/@catppuccin/highlightjs@1.0.1/css";
 
 // The themes of the screen preview, which the page can switch between (see the theme menu in client.js).
 export const SCREEN_THEMES = ["dark", "light", "github-dark", "github-light"];
@@ -12,9 +12,10 @@ export const SCREEN_THEMES = ["dark", "light", "github-dark", "github-light"];
 const isGithub = (theme) => theme === "github-light" || theme === "github-dark";
 
 function cssLinks(theme) {
+  // the code colours of the github themes follow their palette, like the rest of the page
   const highlight = isGithub(theme)
-    ? `${HLJS_STYLES}/${theme === "github-dark" ? "github-dark" : "github"}.min.css`
-    : "https://cdn.jsdelivr.net/npm/@catppuccin/highlightjs@1.0.1/css/catppuccin-mocha.css";
+    ? `${HLJS_STYLES}/catppuccin-${theme === "github-dark" ? "mocha" : "latte"}.css`
+    : `${HLJS_STYLES}/catppuccin-mocha.css`;
   return ["https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css", highlight];
 }
 

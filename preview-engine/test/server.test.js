@@ -58,16 +58,17 @@ describe("preview server", () => {
     assert.doesNotMatch(res.body, /<base/);
   });
 
-  test("the github themes use github-markdown-css and the github highlight style", async () => {
-    for (const [theme, hljs] of [
-      ["github-dark", "github-dark.min.css"],
-      ["github-light", "styles/github.min.css"],
+  test("the github themes use github-markdown-css with the Catppuccin palette and code style", async () => {
+    for (const [theme, hljs, palette] of [
+      ["github-dark", "catppuccin-mocha.css", "--ctp-mocha-base"],
+      ["github-light", "catppuccin-latte.css", "--ctp-latte-base"],
     ]) {
       const html = renderShell({ id: "x", theme, title: "t", html: "<p>hi</p>", version: 1 });
       assert.match(html, new RegExp(`<body class="${theme}">`));
       assert.match(html, /<div id="content" class="markdown-body">/);
       assert.match(html, new RegExp(`\\.${theme} \\{`));
       assert.ok(html.includes(hljs));
+      assert.ok(html.includes(palette));
       assert.doesNotMatch(html, /@scope \(\.dark\)/);
     }
   });
