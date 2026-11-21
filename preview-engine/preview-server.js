@@ -10,7 +10,7 @@ import mime from "mime-types";
 import { isServableAsset } from "./links.js";
 import { render } from "./pipeline.js";
 import { DEFAULT_MARKERS, findRoot, hasHiddenSegment, isInside } from "./roots.js";
-import { renderShell } from "./shell.js";
+import { renderShell, SCREEN_THEMES } from "./shell.js";
 
 const engineDir = dirname(fileURLToPath(import.meta.url));
 const require = createRequire(import.meta.url);
@@ -306,9 +306,14 @@ export function createPreviewServer(options = {}) {
     if (session.version === 0 && !session.error) {
       await refresh(session);
     }
+    // The theme picked in the page's menu wins over the one from the Neovim configuration. The cookie
+    // has no port, so the choice also applies to other documents and to a restarted server. The
+    // rendered HTML is the same for every screen theme: only the page around it changes.
+    const picked = parseCookies(req.headers.cookie).rp_theme;
+    const theme = SCREEN_THEMES.includes(picked) ? picked : session.theme;
     const page = renderShell({
       id: session.id,
-      theme: session.theme,
+      theme,
       title: session.title,
       html: session.html,
       version: session.version,

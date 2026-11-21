@@ -26,6 +26,24 @@
   };
   document.body.appendChild(toggle);
 
+  // Theme menu: the choice goes in a cookie (without a port, so it is kept for other documents and
+  // after a restart), which the server reads when it builds the page; then the page is reloaded.
+  var themeMenu = document.createElement("select");
+  themeMenu.className = "rp-theme-menu";
+  themeMenu.title = "theme";
+  ["dark", "light", "github-dark", "github-light"].forEach(function (name) {
+    var option = document.createElement("option");
+    option.value = name;
+    option.textContent = name;
+    option.selected = name === document.body.className;
+    themeMenu.appendChild(option);
+  });
+  themeMenu.onchange = function () {
+    document.cookie = "rp_theme=" + themeMenu.value + "; Path=/; SameSite=Strict; Max-Age=31536000";
+    window.location.reload();
+  };
+  document.body.appendChild(themeMenu);
+
   var observer = new IntersectionObserver(
     function (entries) {
       entries.forEach(function (entry) {

@@ -40,6 +40,14 @@ html { scroll-behavior: smooth; }
     align-items: center; justify-content: center; border-radius: 8px;
   }
 
+  .rp-theme-menu {
+    position: fixed; right: 28px; top: 5px; z-index: 1002;
+    font: 0.8em "Noto Sans", sans-serif; padding: 2px 4px; border-radius: 6px;
+    border: 1px solid var(--surface1, #888); background: var(--mantle, #eee); color: var(--text, #333);
+    opacity: 0.35; transition: opacity 0.2s;
+  }
+  .rp-theme-menu:hover, .rp-theme-menu:focus { opacity: 1; }
+
   /* connection indicator (live preview only) */
   #rp-status {
     position: fixed; right: 10px; top: 10px; z-index: 1002;

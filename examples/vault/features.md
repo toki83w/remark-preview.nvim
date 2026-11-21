@@ -25,6 +25,7 @@ Tick these off while reading the preview (they are task lists, so they also show
 - [ ] The browser opened one tab for this file, with the Catppuccin dark theme
 - [ ] The ☰ button at the top left opens a sidebar listing the headings; it highlights the current one
 - [ ] The dot at the top right is green (live connection)
+- [ ] The theme menu at the top right switches the theme; the choice is kept for the other documents
 - [ ] Edit the **live update marker** below, save, and the page changes without reloading or jumping
 - [ ] Every section below shows what it says under **Expect**
 - [ ] `:RemarkPreviewSyncPosition` scrolls the browser to the cursor line (see the last sections)

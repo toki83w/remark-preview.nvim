@@ -6,6 +6,9 @@ const engineDir = dirname(fileURLToPath(import.meta.url));
 
 const HLJS_STYLES = "https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles";
 
+// The themes of the screen preview, which the page can switch between (see the theme menu in client.js).
+export const SCREEN_THEMES = ["dark", "light", "github-dark", "github-light"];
+
 const isGithub = (theme) => theme === "github-light" || theme === "github-dark";
 
 function cssLinks(theme) {

@@ -84,6 +84,51 @@ test("the page morphs on update without reloading and keeps the scroll position"
     await app.shutdown();
     tmp.cleanup();
   }
+
+test("the theme menu switches the theme and the choice is kept for another document", { timeout: 90000 }, async (t) => {
+  const browser = await launch();
+  if (!browser) {
+    t.skip("Chrome/puppeteer not available");
+    return;
+  }
+
+  const tmp = tempDir();
+  const docA = join(tmp.dir, "a.md");
+  const docB = join(tmp.dir, "b.md");
+  writeFileSync(docA, "# Alpha\n");
+  writeFileSync(docB, "# Beta\n");
+  const app = createPreviewServer({ kroki: false });
+  await app.listen(0);
+
+  try {
+    const infoA = await app.open(docA);
+    const infoB = await app.open(docB);
+    const page = await browser.newPage();
+    await page.setRequestInterception(true);
+    page.on("request", (req) => (new URL(req.url()).hostname === "127.0.0.1" ? req.continue() : req.abort()));
+
+    await page.goto(infoA.url, { waitUntil: "domcontentloaded" });
+    await page.waitForSelector(".rp-theme-menu");
+    assert.equal(await page.evaluate(() => document.body.className), "dark");
+
+    await Promise.all([
+      page.waitForNavigation({ waitUntil: "domcontentloaded" }),
+      page.select(".rp-theme-menu", "github-light"),
+    ]);
+    await page.waitForSelector("#content h1");
+    assert.equal(await page.evaluate(() => document.body.className), "github-light");
+    assert.equal(await page.evaluate(() => document.querySelector(".rp-theme-menu").value), "github-light");
+
+    // the other document, opened by its own URL, comes up in the chosen theme
+    await page.goto(infoB.url, { waitUntil: "domcontentloaded" });
+    await page.waitForSelector("#content h1");
+    assert.equal(await page.evaluate(() => document.body.className), "github-light");
+  } finally {
+    await browser.close();
+    await app.shutdown();
+    tmp.cleanup();
+  }
+});
 });
 
 test("two documents open in two pages update independently", { timeout: 90000 }, async (t) => {

@@ -72,6 +72,16 @@ describe("preview server", () => {
     }
   });
 
+  test("the theme picked in the page (cookie) wins over the configured one, an unknown value is ignored", async () => {
+    const info = await app.open(a);
+    const path = new URL(info.url).pathname;
+    const picked = await get(path, { Cookie: `${cookie}; rp_theme=github-light` });
+    assert.match(picked.body, /<body class="github-light">/);
+    assert.match(picked.body, /<div id="content" class="markdown-body">/);
+    const unknown = await get(path, { Cookie: `${cookie}; rp_theme=print` });
+    assert.match(unknown.body, /<body class="dark">/);
+  });
+
   test("serves morphdom and the client script", async () => {
     const morph = await get("/_/morphdom.js");
     assert.equal(morph.status, 200);

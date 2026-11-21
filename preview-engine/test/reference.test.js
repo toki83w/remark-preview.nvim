@@ -52,6 +52,13 @@ describe("reference document", () => {
     assert.doesNotMatch(page, /Diagram could not be rendered/);
   });
 
+  test("the theme picked in the page's menu (cookie) applies to the reference too", async () => {
+    const res = await request(port, new URL(info.url).pathname, {
+      headers: { Cookie: `${cookie}; rp_theme=github-dark` },
+    });
+    assert.match(res.body, /<body class="github-dark">/);
+  });
+
   test("the frontmatter is not shown, the HTML comment is not displayed", () => {
     assert.doesNotMatch(body, /reference, verification|tags:/);
     assert.match(page, /<title>Remark Preview reference<\/title>/);
