@@ -8,8 +8,6 @@ body {
 
 #content.markdown-body {
   box-sizing: border-box;
-  max-width: 980px;
-  margin: 0 auto;
   padding: 32px 45px;
   background-color: transparent;
 }

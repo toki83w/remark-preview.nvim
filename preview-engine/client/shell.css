@@ -15,6 +15,9 @@ html { scroll-behavior: smooth; }
   }
   body.sidebar-open { margin-left: var(--sidebar-width); }
 
+  /* the text column: at most 1200px wide, centred (not for the print theme) */
+  body:not(.print) #content { box-sizing: border-box; max-width: 1200px; margin: 0 auto; }
+
   .toc-sidebar {
     position: fixed; left: calc(-1 * var(--sidebar-width)); top: 0;
     width: var(--sidebar-width); height: 100vh;
