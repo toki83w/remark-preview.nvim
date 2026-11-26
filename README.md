@@ -69,6 +69,7 @@ The preview commands act on the current buffer. The file must be saved to disk: 
 *   `:RemarkPreviewToggle`: Starts or stops the preview of the current buffer. Several buffers can be previewed at the same time.
 *   `:RemarkPreviewOpen`: Opens the preview in the browser (starts it if inactive).
 *   `:RemarkPreviewSyncPosition`: Scrolls the browser to the line under the cursor.
+*   `:RemarkPreviewRefresh`: Renders the file of the current buffer again. Normally not needed: the preview follows the file on disk.
 *   `:RemarkPreviewExport [open]`: Exports the current file to PDF next to it, using the print theme. Optional `open` argument opens the PDF immediately.
 *   `:RemarkPreviewRestart`: Restarts the preview server and re-opens every active preview.
 *   `:RemarkPreviewStopAll`: Stops every preview and the server.

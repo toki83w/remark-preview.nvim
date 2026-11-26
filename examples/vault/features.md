@@ -27,6 +27,7 @@ Tick these off while reading the preview (they are task lists, so they also show
 - [ ] The dot at the top right is green (live connection)
 - [ ] The theme menu at the top right switches the theme; the choice is kept for the other documents
 - [ ] Edit the **live update marker** below, save, and the page changes without reloading or jumping
+- [ ] The same happens when the file is saved by another program (e.g. `echo >> features.md` in a shell), and `:RemarkPreviewRefresh` renders it again on demand
 - [ ] Every section below shows what it says under **Expect**
 - [ ] `:RemarkPreviewSyncPosition` scrolls the browser to the cursor line (see the last sections)
 - [ ] `:RemarkPreviewExport open` produces a PDF with the print theme (black on white, no colours)
@@ -41,7 +42,7 @@ Plain text with *italic*, **bold**, ***bold italic*** and ~~strikethrough~~. Inl
 
 Highlighted text with ==double equals==. Subscript: H~2~O and CO~2~. Superscript: 10m^2^ and E=mc^2^.
 
-A hard line break uses two trailing spaces  
+A hard line break uses two trailing spaces
 or a backslash\
 at the end of the line. A literal asterisk is written \*like this\*.
 

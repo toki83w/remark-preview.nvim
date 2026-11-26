@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { once } from "node:events";
-import { rmSync, writeFileSync } from "node:fs";
+import { renameSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { renderShell } from "../shell.js";
 import { after, before, describe, test } from "node:test";
@@ -264,5 +264,65 @@ describe("server process", () => {
       child.kill();
       tmp.cleanup();
     }
+  });
+});
+
+describe("watching the file", () => {
+  const tmp = tempDir();
+  let app;
+  let port;
+  let cookie;
+
+  before(async () => {
+    app = createPreviewServer({ kroki: false });
+    port = await app.listen(0);
+    cookie = await login(port, app.token);
+  });
+
+  after(async () => {
+    await app.shutdown();
+    tmp.cleanup();
+  });
+
+  // Waits for updates until one contains the text (a save can produce more than one event).
+  async function updateWith(sse, text) {
+    for (let i = 0; i < 10; i++) {
+      const event = await sse.next("update", 5000);
+      if (event.data.html.includes(text)) {
+        return;
+      }
+    }
+    assert.fail(`no update contained "${text}"`);
+  }
+
+  test("a change made by another program is rendered and pushed to the viewers", async () => {
+    const file = join(tmp.dir, "watched.md");
+    writeFileSync(file, "# Watched\n\nbefore\n");
+    const info = await app.open(file);
+    const sse = openSse(port, `/d/${info.id}/events?v=${app.sessions.get(info.id).version}`, { Cookie: cookie });
+    await sse.ready;
+
+    writeFileSync(file, "# Watched\n\nwritten in place\n");
+    await updateWith(sse, "written in place");
+
+    // editors that save through a temporary file replace the inode
+    writeFileSync(join(tmp.dir, "watched.md.tmp"), "# Watched\n\nreplaced by rename\n");
+    renameSync(join(tmp.dir, "watched.md.tmp"), file);
+    await updateWith(sse, "replaced by rename");
+
+    // a later write is still seen
+    writeFileSync(file, "# Watched\n\nand once more\n");
+    await updateWith(sse, "and once more");
+    sse.close();
+  });
+
+  test("a closed preview is no longer watched", async () => {
+    const file = join(tmp.dir, "closed.md");
+    writeFileSync(file, "# Closed\n");
+    const info = await app.open(file);
+    app.closeSession(file);
+    writeFileSync(file, "# Closed again\n");
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    assert.equal(app.sessions.has(info.id), false);
   });
 });

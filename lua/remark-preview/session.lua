@@ -57,13 +57,7 @@ local function attach(bufnr)
             end,
         })
     end
-    vim.api.nvim_create_autocmd("BufWritePost", {
-        group = augroup,
-        buffer = bufnr,
-        callback = function()
-            M.update(bufnr)
-        end,
-    })
+    -- The server watches the file itself, so saves from any program are picked up.
     -- :bdelete and :bwipeout both end the preview of that buffer.
     vim.api.nvim_create_autocmd({ "BufDelete", "BufWipeout" }, {
         group = augroup,

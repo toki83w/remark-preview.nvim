@@ -39,6 +39,16 @@ function M.sync_preview()
     session.sync(vim.api.nvim_get_current_buf())
 end
 
+-- Renders the file of the current buffer again (the preview shows the file on disk, not unsaved text).
+function M.refresh()
+    local bufnr = vim.api.nvim_get_current_buf()
+    if not session.is_active(bufnr) then
+        util.notify("no active preview for this buffer", vim.log.levels.WARN)
+        return
+    end
+    session.update(bufnr)
+end
+
 function M.export_pdf(open_after)
     export.export_pdf(vim.api.nvim_get_current_buf(), open_after)
 end
@@ -58,6 +68,7 @@ function M.setup(opts)
     vim.api.nvim_create_user_command("RemarkPreviewRestart", M.restart, {})
     vim.api.nvim_create_user_command("RemarkPreviewStopAll", M.stop_all, {})
 
+    vim.api.nvim_create_user_command("RemarkPreviewRefresh", M.refresh, {})
     vim.api.nvim_create_user_command("RemarkPreviewSyncPosition", M.sync_preview, {})
 
     vim.api.nvim_create_user_command("RemarkPreviewExport", function(cmd_opts)

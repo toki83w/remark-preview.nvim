@@ -1,6 +1,6 @@
 import { spawn } from "node:child_process";
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
-import { createReadStream, readFileSync, realpathSync } from "node:fs";
+import { createReadStream, readFileSync, realpathSync, watch } from "node:fs";
 import { readFile, stat } from "node:fs/promises";
 import { createServer } from "node:http";
 import { createRequire } from "node:module";
@@ -16,6 +16,8 @@ const engineDir = dirname(fileURLToPath(import.meta.url));
 const require = createRequire(import.meta.url);
 
 const HEARTBEAT_MS = 15000;
+// Editors save in bursts of events (truncate + write, or write a temp file and rename it over).
+const WATCH_DEBOUNCE_MS = 75;
 
 const sha256 = (value) => createHash("sha256").update(value).digest();
 
@@ -121,7 +123,8 @@ export function createPreviewServer(options = {}) {
   }
 
   // Renders the file again. Renders of one session never overlap.
-  function refresh(session) {
+  // changedOnly: do nothing when the text is the one already shown (used by the file watcher).
+  function refresh(session, { changedOnly = false } = {}) {
     const run = async () => {
       let text;
       try {
@@ -129,9 +132,13 @@ export function createPreviewServer(options = {}) {
       } catch (e) {
         return fail(session, `Cannot read ${session.path}: ${e.message}`);
       }
+      if (changedOnly && session.error === null && text === session.source) {
+        return;
+      }
       try {
         const links = linksFor(session);
         const result = await render(text, { theme: session.theme, path: session.path, kroki, links, wikilinks });
+        session.source = text;
         session.html = result.html;
         session.headings = result.headings;
         session.warnings = result.warnings;
@@ -150,6 +157,36 @@ export function createPreviewServer(options = {}) {
   function fail(session, message) {
     session.error = message;
     broadcast(session, "render-error", { message });
+  }
+
+  // Re-renders a document when its file changes, whoever wrote it. The directory is watched rather
+  // than the file, so that a save which replaces the file (new inode) is still seen.
+  function watchFile(session) {
+    const name = basename(session.path);
+    let timer = null;
+    let watcher;
+    try {
+      watcher = watch(dirname(session.path), { persistent: false }, (_event, filename) => {
+        if (filename && filename.toString() !== name) {
+          return;
+        }
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+          // a document reached through a link is rendered on its first visit, not before
+          if (sessions.get(session.id) === session && session.version > 0) {
+            refresh(session, { changedOnly: true });
+          }
+        }, WATCH_DEBOUNCE_MS);
+        timer.unref();
+      });
+    } catch {
+      return; // the directory does not exist (yet): the preview then only updates on request
+    }
+    watcher.on("error", () => watcher.close());
+    session.unwatch = () => {
+      clearTimeout(timer);
+      watcher.close();
+    };
   }
 
   // Creates the session of a document without rendering it (that happens on the first request).
@@ -173,6 +210,7 @@ export function createPreviewServer(options = {}) {
         queue: Promise.resolve(),
       };
       sessions.set(id, session);
+      watchFile(session);
     }
     return session;
   }
@@ -221,6 +259,7 @@ export function createPreviewServer(options = {}) {
     for (const res of session.clients) {
       res.end();
     }
+    session.unwatch?.();
     sessions.delete(id);
     return true;
   }
@@ -535,6 +574,7 @@ export function createPreviewServer(options = {}) {
         child.kill();
       }
       for (const session of sessions.values()) {
+        session.unwatch?.();
         for (const res of session.clients) {
           res.end();
         }
