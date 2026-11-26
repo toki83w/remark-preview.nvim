@@ -37,4 +37,27 @@ function M.open_external(target)
     end
 end
 
+-- Opens the URL of a preview: with `browser_command` when it is set, else with the system handler.
+function M.open_preview(url)
+    local command = require("remark-preview.config").options.browser_command
+    if type(command) == "function" then
+        local ok, err = pcall(command, url)
+        if not ok then
+            M.notify("browser_command failed: " .. tostring(err), vim.log.levels.WARN)
+        end
+    elseif command then
+        local args = vim.list_extend(vim.deepcopy(command), { url })
+        if vim.fn.executable(args[1]) ~= 1 then
+            M.notify(string.format("browser_command: %s is not executable", args[1]), vim.log.levels.WARN)
+            return
+        end
+        local ok, err = pcall(vim.system, args, { detach = true })
+        if not ok then
+            M.notify("browser_command failed: " .. tostring(err), vim.log.levels.WARN)
+        end
+    else
+        M.open_external(url)
+    end
+end
+
 return M

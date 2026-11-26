@@ -105,4 +105,49 @@ tests["a file written by another program is rendered, and the refresh command re
     vim.cmd("RemarkPreviewStopAll")
 end
 
+tests["browser_command opens the preview URL with a function or a command"] = function()
+    local opened = H.capture_open()
+    local messages = H.capture_notify()
+    local dir = H.tmpdir()
+    H.write(dir .. "/a.md", { "# A" })
+    local buf = H.edit(dir .. "/a.md")
+
+    local urls = {}
+    require("remark-preview").setup({
+        browser_command = function(url)
+            table.insert(urls, url)
+        end,
+    })
+    session.start(buf)
+    H.wait(function()
+        return session.get(buf) and session.get(buf).url
+    end, 20000, "preview did not start")
+    assert(#urls == 1 and urls[1] == session.get(buf).url, "the function receives the URL")
+    assert(#opened == 0, "the system handler is not used")
+
+    -- a command gets the URL appended as its last argument
+    local out = dir .. "/args"
+    local script = dir .. "/opener.sh"
+    H.write(script, { "#!/bin/sh", 'echo "$@" > ' .. vim.fn.shellescape(out) })
+    vim.fn.setfperm(script, "rwxr-xr-x")
+    require("remark-preview").setup({ browser_command = { script, "--new-window" } })
+    session.start(buf)
+    H.wait(function()
+        return vim.fn.filereadable(out) == 1 and #vim.fn.readfile(out) > 0
+    end, 5000, "the command was not run")
+    assert(vim.fn.readfile(out)[1] == "--new-window " .. session.get(buf).url)
+
+    -- an invalid value falls back to the system handler
+    require("remark-preview").setup({ browser_command = 42 })
+    assert(require("remark-preview.config").options.browser_command == nil)
+    H.wait(function()
+        return vim.iter(messages):any(function(m)
+            return m.msg:find("browser_command", 1, true) ~= nil
+        end)
+    end, 2000, "an invalid browser_command must be reported")
+    session.start(buf)
+    assert(#opened == 1, "the system handler is used again")
+    session.stop_all()
+end
+
 return tests

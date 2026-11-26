@@ -109,7 +109,7 @@ function M.start(bufnr, opts)
     local session = sessions[bufnr]
     if session then
         if session.url and opts.open_browser ~= false then
-            util.open_external(session.url)
+            util.open_preview(session.url)
         end
         return
     end
@@ -154,7 +154,7 @@ function M.start(bufnr, opts)
                 session.starting = nil
                 attach(bufnr)
                 if opts.open_browser ~= false then
-                    util.open_external(session.url)
+                    util.open_preview(session.url)
                 end
             end
         )

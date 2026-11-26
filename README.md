@@ -145,6 +145,7 @@ require("remark-preview").setup({
   port = 0,                -- 0 lets the OS pick a free port
   debug = false,           -- print debug messages
   sync_on_cursor = false,  -- scroll the preview along with the cursor
+  browser_command = nil,   -- how the URL is opened: nil (system handler), { "firefox", "--new-window" } or function(url)
   root_markers = { ".obsidian", ".git" }, -- what marks the project root
   wikilinks = "auto",      -- Obsidian [[links]]: "auto" (inside a vault), true or false
   kroki = {

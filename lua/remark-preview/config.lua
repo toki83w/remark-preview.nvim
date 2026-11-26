@@ -5,6 +5,9 @@ M.defaults = {
     port = 0, -- 0 lets the OS choose a free port for the preview server
     debug = false, -- print debug messages
     sync_on_cursor = false, -- scroll the preview along with the cursor (otherwise: :RemarkPreviewSyncPosition)
+    -- How the preview URL is opened. nil: the system handler (vim.ui.open). A command, with the URL
+    -- appended as the last argument, e.g. { "firefox", "--new-window" }; or a function(url).
+    browser_command = nil,
     -- A document's project root is its nearest ancestor containing one of these (else its own
     -- directory). Images and linked files are only served from inside it.
     root_markers = { ".obsidian", ".git" },
@@ -62,6 +65,31 @@ function M.setup(opts)
     end
 
     merged.sync_on_cursor = merged.sync_on_cursor == true
+
+    -- a command given by the user replaces the default instead of being merged index by index
+    if opts.browser_command ~= nil then
+        merged.browser_command = type(opts.browser_command) == "table" and vim.deepcopy(opts.browser_command)
+            or opts.browser_command
+    end
+    local command = merged.browser_command
+    local command_valid = command == nil
+        or type(command) == "function"
+        or (
+            vim.islist(command)
+            and #command > 0
+            and vim.iter(command):all(function(arg)
+                return type(arg) == "string" and arg ~= ""
+            end)
+        )
+    if not command_valid then
+        vim.schedule(function()
+            vim.notify(
+                "remark-preview: `browser_command` must be a list of strings or a function, using the system handler",
+                vim.log.levels.WARN
+            )
+        end)
+        merged.browser_command = nil
+    end
 
     if type(merged.local_diagrams) ~= "boolean" then
         vim.schedule(function()
